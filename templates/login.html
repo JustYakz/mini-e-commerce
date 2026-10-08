@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Masuk - Barokah E-Commerce</title>
+    <!-- Dark Mode Init Script -->
+    <script>(function(){if(localStorage.getItem('theme')==='dark'||(!localStorage.getItem('theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.setAttribute('data-theme','dark');})();</script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Core Design Tokens Stylesheet -->
+    <link rel="stylesheet" href="/static/css/style.css" />
+
+    <style>
+      .auth-wrapper {
+        min-height: 85vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+      }
+      .auth-card {
+        max-width: 420px;
+        width: 100%;
+        background: var(--bg-surface);
+        padding: 36px 32px;
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--border-color);
+      }
+      .auth-header {
+        text-align: center;
+        margin-bottom: 26px;
+      }
+      .auth-icon-box {
+        width: 52px;
+        height: 52px;
+        border-radius: var(--radius-lg);
+        background: var(--primary-light);
+        color: var(--primary);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 14px;
+      }
+      .auth-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 6px;
+        color: var(--text-main);
+      }
+      .auth-subtitle {
+        color: var(--text-muted);
+        font-size: 14px;
+        margin: 0;
+      }
+      .auth-footer {
+        text-align: center;
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-subtle);
+        font-size: 14px;
+        color: var(--text-muted);
+      }
+      .auth-back {
+        text-align: center;
+        margin-top: 14px;
+      }
+      .auth-back a {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text-muted);
+        font-size: 13.5px;
+      }
+      .auth-back a:hover {
+        color: var(--text-main);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="auth-wrapper">
+      <div class="auth-card" style="position: relative;">
+        <div style="position: absolute; top: 16px; right: 16px;">
+          <button type="button" class="btn-theme-toggle" onclick="toggleDarkMode()" title="Ubah Tema Gelap/Terang">
+            <i data-lucide="moon" class="lucide-sm"></i>
+          </button>
+        </div>
+        <div class="auth-header">
+          <div class="auth-icon-box">
+            <i data-lucide="lock" class="lucide-lg"></i>
+          </div>
+          <h2 class="auth-title">Selamat Datang</h2>
+          <p class="auth-subtitle">Masuk untuk melanjutkan ke akun Anda</p>
+        </div>
+
+        <!-- Flash Notification Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-container">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                  <i data-lucide="{% if category == 'success' %}check-circle{% elif category == 'danger' %}alert-circle{% else %}info{% endif %}"></i>
+                  <span>{{ message }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <form action="/login" method="POST">
+          <div class="form-group">
+            <label class="form-label">Alamat Email</label>
+            <input
+              type="email"
+              name="email"
+              placeholder="nama@email.com"
+              class="form-control"
+              required
+              autofocus
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input
+              type="password"
+              name="password"
+              placeholder="••••••••"
+              class="form-control"
+              required
+            />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" style="padding: 11px; font-size: 15px; margin-top: 6px;">
+            <i data-lucide="log-in" class="lucide-sm"></i>
+            <span>Masuk ke Akun</span>
+          </button>
+        </form>
+
+        <div class="auth-footer">
+          Belum punya akun? <a href="/register" style="font-weight: 600;">Daftar sekarang</a>
+        </div>
+        <div class="auth-back">
+          <a href="/">
+            <i data-lucide="arrow-left" class="lucide-sm"></i>
+            <span>Kembali ke Katalog Utama</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+      function toggleDarkMode() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+          document.documentElement.removeAttribute('data-theme');
+          localStorage.setItem('theme', 'light');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          localStorage.setItem('theme', 'dark');
+        }
+        if (window.lucide) lucide.createIcons();
+      }
+
+      lucide.createIcons();
+    </script>
+  </body>
+</html>

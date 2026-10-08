@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="avatarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="64" fill="url(#avatarGrad)"/>
+  <!-- Head -->
+  <circle cx="64" cy="46" r="22" fill="#FFFFFF"/>
+  <!-- Body -->
+  <path d="M64 74 C44 74 24 86 18 108 C29 120 45 128 64 128 C83 128 99 120 110 108 C104 86 84 74 64 74 Z" fill="#FFFFFF"/>
+</svg>

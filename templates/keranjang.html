@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Keranjang Belanja - Barokah E-Commerce</title>
+    <!-- Dark Mode Init Script -->
+    <script>(function(){if(localStorage.getItem('theme')==='dark'||(!localStorage.getItem('theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.setAttribute('data-theme','dark');})();</script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Core Design Tokens Stylesheet -->
+    <link rel="stylesheet" href="/static/css/style.css" />
+
+    <style>
+      .cart-container {
+        max-width: 960px;
+        margin: 40px auto;
+        padding: 0 20px;
+      }
+      .cart-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-xl);
+        padding: 28px 32px;
+        box-shadow: var(--shadow-sm);
+      }
+      .cart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 24px;
+      }
+      .cart-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+      .cart-title-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-lg);
+        background: var(--primary-light);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .cart-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-top: 8px;
+      }
+      .cart-table th {
+        background: var(--bg-subtle);
+        color: var(--text-muted);
+        font-weight: 600;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        padding: 12px 14px;
+        border-top: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+      }
+      .cart-table th:first-child {
+        border-top-left-radius: var(--radius-md);
+        border-bottom-left-radius: var(--radius-md);
+        border-left: 1px solid var(--border-color);
+      }
+      .cart-table th:last-child {
+        border-top-right-radius: var(--radius-md);
+        border-bottom-right-radius: var(--radius-md);
+        border-right: 1px solid var(--border-color);
+      }
+      .cart-table td {
+        padding: 18px 14px;
+        border-bottom: 1px solid var(--border-subtle);
+        vertical-align: middle;
+      }
+      .product-cell {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .img-thumb {
+        width: 56px;
+        height: 56px;
+        object-fit: cover;
+        border-radius: var(--radius-md);
+        background: var(--bg-subtle);
+        border: 1px solid var(--border-color);
+        flex-shrink: 0;
+      }
+      .product-title {
+        font-weight: 600;
+        color: var(--text-main);
+        font-size: 14.5px;
+        line-height: 1.35;
+      }
+      .qty-control {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: var(--bg-subtle);
+        padding: 3px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border-color);
+      }
+      .btn-qty {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: var(--radius-sm);
+        background: var(--bg-surface);
+        color: var(--text-main);
+        text-decoration: none;
+        transition: all 0.15s ease;
+      }
+      .btn-qty:hover {
+        background: var(--primary);
+        color: #ffffff;
+      }
+      .qty-num {
+        font-weight: 700;
+        min-width: 30px;
+        text-align: center;
+        font-size: 13.5px;
+      }
+      .subtotal-val {
+        font-weight: 700;
+        color: var(--accent-emerald);
+        font-size: 15px;
+      }
+      .cart-summary {
+        margin-top: 28px;
+        padding-top: 22px;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      .total-group {
+        text-align: right;
+      }
+      .total-label {
+        font-size: 13.5px;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+      .total-val {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--accent-emerald);
+        letter-spacing: -0.02em;
+      }
+      .summary-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .empty-cart {
+        text-align: center;
+        padding: 60px 20px;
+      }
+      .empty-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: var(--radius-full);
+        background: var(--bg-subtle);
+        color: var(--text-light);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navbar -->
+    <header style="background: var(--bg-surface); border-bottom: 1px solid var(--border-color); padding: 14px 32px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100;">
+      <a href="/" class="brand" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text-main);">
+        <img src="/static/images/logo.png" alt="Barokah E-Commerce" class="brand-logo-img" />
+        <h1 style="margin: 0; font-size: 19px; font-weight: 700;">Barokah E-Commerce</h1>
+      </a>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button type="button" class="btn-theme-toggle" onclick="toggleDarkMode()" title="Ubah Tema Gelap/Terang">
+          <i data-lucide="moon" class="lucide-sm"></i>
+        </button>
+        <a href="/" class="btn btn-secondary btn-sm">
+          <i data-lucide="arrow-left" class="lucide-sm"></i>
+          <span>Kembali ke Katalog</span>
+        </a>
+        {% if session.get('user_id') %}
+          <a href="/profil" class="nav-user-profile-link" title="Profil Akun">
+            {% if user_foto %}
+              <img src="/static/uploads/{{ user_foto }}" alt="Foto Profil" class="nav-user-avatar-img">
+            {% else %}
+              <img src="/static/images/default_avatar.svg" alt="Default Avatar" class="nav-user-avatar-img">
+            {% endif %}
+            <span style="font-size: 13.5px; font-weight: 600;">{{ (session.get('nama', 'Akun') or 'Akun').split(' ')[0] }}</span>
+          </a>
+        {% endif %}
+      </div>
+    </header>
+
+    <div class="cart-container">
+      <div class="cart-card">
+        <div class="cart-header">
+          <h2 class="cart-title">
+            <span class="cart-title-icon">
+              <i data-lucide="shopping-cart"></i>
+            </span>
+            <span>Keranjang Belanja</span>
+          </h2>
+          <a href="/" class="btn btn-secondary btn-sm">
+            <i data-lucide="arrow-left" class="lucide-sm"></i>
+            <span>Lanjut Belanja</span>
+          </a>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-container">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                  <i data-lucide="{% if category == 'success' %}check-circle{% elif category == 'danger' %}alert-circle{% else %}info{% endif %}"></i>
+                  <span>{{ message }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% if items %}
+          <table class="cart-table">
+            <thead>
+              <tr>
+                <th>Produk</th>
+                <th>Harga Satuan</th>
+                <th style="text-align: center;">Jumlah</th>
+                <th>Subtotal</th>
+                <th style="text-align: center;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in items %}
+                <tr>
+                  <td>
+                    <div class="product-cell">
+                      <img
+                        src="/static/uploads/{{ item.produk.gambar or 'default.jpg' }}"
+                        class="img-thumb"
+                        alt="{{ item.produk.nama_produk }}"
+                        onerror="this.onerror=null; this.src='/static/uploads/default.jpg';"
+                      />
+                      <span class="product-title">{{ item.produk.nama_produk }}</span>
+                    </div>
+                  </td>
+                  <td style="color: var(--text-muted); font-size: 14px;">{{ item.produk.harga | rupiah }}</td>
+                  <td style="text-align: center;">
+                    <div class="qty-control">
+                      <a href="/kurang-keranjang/{{ item.produk.id }}" class="btn-qty" title="Kurangi Kuantitas">
+                        <i data-lucide="minus" class="lucide-sm"></i>
+                      </a>
+                      <span class="qty-num">{{ item.jumlah }}</span>
+                      <a href="/tambah-keranjang/{{ item.produk.id }}" class="btn-qty" title="Tambah Kuantitas">
+                        <i data-lucide="plus" class="lucide-sm"></i>
+                      </a>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="subtotal-val">{{ item.subtotal | rupiah }}</span>
+                  </td>
+                  <td style="text-align: center;">
+                    <a
+                      href="/hapus-keranjang/{{ item.produk.id }}"
+                      class="btn btn-danger-outline btn-sm"
+                      onclick="return confirm('Hapus produk ini dari keranjang?');"
+                      title="Hapus dari keranjang"
+                    >
+                      <i data-lucide="trash-2" class="lucide-sm"></i>
+                      <span>Hapus</span>
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          <div class="cart-summary">
+            <div>
+              <a href="/" class="btn btn-secondary">
+                <i data-lucide="arrow-left" class="lucide-sm"></i>
+                <span>Lanjut Belanja</span>
+              </a>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 24px;">
+              <div class="total-group">
+                <div class="total-label">Total Pembayaran:</div>
+                <div class="total-val">{{ total | rupiah }}</div>
+              </div>
+              <div class="summary-actions">
+                <a
+                  href="/checkout"
+                  class="btn btn-emerald"
+                  style="padding: 12px 24px; font-size: 15px;"
+                >
+                  <i data-lucide="credit-card"></i>
+                  <span>Lanjut ke Checkout</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <div class="empty-cart">
+            <div class="empty-icon">
+              <i data-lucide="shopping-bag" class="lucide-xl"></i>
+            </div>
+            <h3 style="margin-bottom: 8px;">Keranjang Masih Kosong</h3>
+            <p style="color: var(--text-muted); font-size: 14.5px; margin-bottom: 22px;">Anda belum menambahkan barang apapun ke keranjang belanja.</p>
+            <a href="/" class="btn btn-primary">
+              <i data-lucide="grid" class="lucide-sm"></i>
+              <span>Mulai Belanja Sekarang</span>
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+      function toggleDarkMode() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+          document.documentElement.removeAttribute('data-theme');
+          localStorage.setItem('theme', 'light');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          localStorage.setItem('theme', 'dark');
+        }
+        if (window.lucide) lucide.createIcons();
+      }
+
+      lucide.createIcons();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Riwayat Pesanan Saya - Barokah E-Commerce</title>
+    <!-- Dark Mode Init Script -->
+    <script>(function(){if(localStorage.getItem('theme')==='dark'||(!localStorage.getItem('theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.setAttribute('data-theme','dark');})();</script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Leaflet.js CSS & JS for In-Page Tracking Modal -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <!-- Core Design Tokens Stylesheet -->
+    <link rel="stylesheet" href="/static/css/style.css" />
+
+    <style>
+      .orders-wrapper {
+        max-width: 980px;
+        margin: 36px auto;
+        padding: 0 20px;
+      }
+      .page-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-xl);
+        padding: 32px;
+        box-shadow: var(--shadow-sm);
+      }
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .page-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+      .page-title-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-lg);
+        background: var(--primary-light);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .card-order {
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        margin-bottom: 22px;
+        background: var(--bg-surface);
+        box-shadow: var(--shadow-xs);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+      .card-order:hover {
+        border-color: #cbd5e1;
+        box-shadow: var(--shadow-sm);
+      }
+      .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 1px solid var(--border-subtle);
+        padding-bottom: 14px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .order-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+      .order-date {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-top: 3px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .item-list {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .item-list td {
+        padding: 10px 8px;
+        border-bottom: 1px solid var(--border-subtle);
+        font-size: 14px;
+        vertical-align: middle;
+      }
+      .img-thumb {
+        width: 48px;
+        height: 48px;
+        object-fit: cover;
+        border-radius: var(--radius-md);
+        vertical-align: middle;
+        margin-right: 12px;
+        background: var(--bg-subtle);
+        border: 1px solid var(--border-color);
+      }
+      .order-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border-subtle);
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+      }
+      .empty-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: var(--radius-full);
+        background: var(--bg-subtle);
+        color: var(--text-light);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+      }
+
+      /* Modal Tracking Pop-up Styling */
+      .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(4px);
+        z-index: 1100;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+      .modal-backdrop.show {
+        display: flex;
+        opacity: 1;
+      }
+      .modal-dialog-tracking {
+        background: var(--bg-surface);
+        width: 100%;
+        max-width: 780px;
+        max-height: 92vh;
+        border-radius: var(--radius-xl);
+        box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+        border: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .modal-header-tracking {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .modal-body-tracking {
+        padding: 20px 24px;
+        overflow-y: auto;
+      }
+      #modalMapContainer {
+        height: 300px;
+        width: 100%;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border-color);
+        margin: 16px 0;
+      }
+
+      /* Stepper inside modal */
+      .modal-stepper {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+        margin: 10px 0 16px;
+      }
+      .modal-stepper::before {
+        content: '';
+        position: absolute;
+        top: 18px;
+        left: 20px;
+        right: 20px;
+        height: 2.5px;
+        background: var(--border-color);
+        z-index: 1;
+      }
+      .modal-stepper-progress {
+        position: absolute;
+        top: 18px;
+        left: 20px;
+        height: 2.5px;
+        background: var(--accent-emerald);
+        z-index: 2;
+        transition: width 0.3s ease;
+      }
+      .m-step {
+        position: relative;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        width: 100px;
+      }
+      .m-step-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--bg-surface);
+        border: 2px solid var(--border-color);
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+      }
+      .m-step.active .m-step-icon {
+        border-color: var(--primary);
+        background: var(--primary-light);
+        color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+      }
+      .m-step.completed .m-step-icon {
+        border-color: var(--accent-emerald);
+        background: var(--accent-emerald);
+        color: #ffffff;
+      }
+      .m-step-label {
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-top: 6px;
+      }
+      .m-step.active .m-step-label {
+        color: var(--primary);
+      }
+      .m-step.completed .m-step-label {
+        color: var(--text-main);
+      }
+
+      /* Custom Map Pin Pulse */
+      .custom-pin {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        color: white;
+      }
+      .pin-warehouse { background: #2563EB; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+      .pin-courier { background: #059669; border: 2px solid white; animation: pulse 1.8s infinite; }
+      .pin-destination { background: #DC2626; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+      @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.6); }
+        70% { box-shadow: 0 0 0 12px rgba(5, 150, 105, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navbar -->
+    <header style="background: var(--bg-surface); border-bottom: 1px solid var(--border-color); padding: 14px 32px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100;">
+      <a href="/" class="brand" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text-main);">
+        <img src="/static/images/logo.png" alt="Barokah E-Commerce" class="brand-logo-img" />
+        <h1 style="margin: 0; font-size: 19px; font-weight: 700;">Barokah E-Commerce</h1>
+      </a>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button type="button" class="btn-theme-toggle" onclick="toggleDarkMode()" title="Ubah Tema Gelap/Terang">
+          <i data-lucide="moon" class="lucide-sm"></i>
+        </button>
+        <a href="/" class="btn btn-secondary btn-sm">
+          <i data-lucide="arrow-left" class="lucide-sm"></i>
+          <span>Kembali ke Katalog</span>
+        </a>
+        {% if session.get('user_id') %}
+          <a href="/profil" class="nav-user-profile-link" title="Profil Akun">
+            {% if user_foto %}
+              <img src="/static/uploads/{{ user_foto }}" alt="Foto Profil" class="nav-user-avatar-img">
+            {% else %}
+              <img src="/static/images/default_avatar.svg" alt="Default Avatar" class="nav-user-avatar-img">
+            {% endif %}
+            <span style="font-size: 13.5px; font-weight: 600;">{{ (session.get('nama', 'Akun') or 'Akun').split(' ')[0] }}</span>
+          </a>
+        {% endif %}
+      </div>
+    </header>
+
+    <div class="orders-wrapper">
+      <div class="page-card">
+        <div class="page-header">
+          <h2 class="page-title">
+            <span class="page-title-icon">
+              <i data-lucide="receipt"></i>
+            </span>
+            <span>Riwayat Pesanan Saya</span>
+          </h2>
+          <div style="display: flex; gap: 10px;">
+            <a href="/" class="btn btn-secondary btn-sm">
+              <i data-lucide="arrow-left" class="lucide-sm"></i>
+              <span>Katalog</span>
+            </a>
+            <a href="/profil" class="btn btn-secondary btn-sm">
+              <i data-lucide="user" class="lucide-sm"></i>
+              <span>Profil Saya</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-container" style="margin-bottom: 20px;">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                  <i data-lucide="{% if category == 'success' %}check-circle{% elif category == 'danger' %}alert-circle{% else %}info{% endif %}"></i>
+                  <span>{{ message }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% if pesanan_list %}
+          {% for p in pesanan_list %}
+            <div class="card-order">
+              <div class="order-header">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="order-title">Pesanan #{{ p.id }}</span>
+                    <span class="badge badge-{% if p.status == 'selesai' %}success{% elif p.status == 'dikirim' %}primary{% elif p.status in ['diproses', 'dibayar', 'menunggu_pembayaran'] %}warning{% else %}secondary{% endif %}">
+                      {% if p.status == 'menunggu_pembayaran' %}
+                        Menunggu Pembayaran
+                      {% elif p.status == 'diproses' or p.status == 'dibayar' %}
+                        Mempersiapkan Paket
+                      {% elif p.status == 'dikirim' %}
+                        Paket Dikirim
+                      {% elif p.status == 'selesai' %}
+                        Selesai
+                      {% else %}
+                        {{ p.status | capitalize }}
+                      {% endif %}
+                    </span>
+                  </div>
+                  <div class="order-date">
+                    <i data-lucide="calendar" class="lucide-sm"></i>
+                    <span>{{ p.tanggal.strftime('%d %B %Y, %H:%M') if p.tanggal else '-' }} WIB</span>
+                    <span>&bull;</span>
+                    <span>Metode: <strong>{{ p.metode_pembayaran or 'Transfer Bank' }}</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Rincian Item Produk -->
+              <table class="item-list">
+                {% for item in p.rincian %}
+                  <tr>
+                    <td>
+                      <div style="display: flex; align-items: center;">
+                        <img
+                          src="/static/uploads/{{ item.gambar or 'default.jpg' }}"
+                          class="img-thumb"
+                          alt="{{ item.nama_produk }}"
+                          onerror="this.onerror=null; this.src='/static/uploads/default.jpg';"
+                        />
+                        <strong style="color: var(--text-main);">{{ item.nama_produk }}</strong>
+                      </div>
+                    </td>
+                    <td style="color: var(--text-muted); font-size: 13.5px;">{{ item.jumlah }} &times; {{ item.harga_satuan | rupiah }}</td>
+                    <td style="text-align: right; font-weight: 600; color: var(--text-main);">{{ item.subtotal | rupiah }}</td>
+                  </tr>
+                {% endfor %}
+              </table>
+
+              <!-- Footer Pesanan -->
+              <div class="order-footer">
+                <div style="font-size: 13px; color: var(--text-muted); max-width: 480px;">
+                  <span style="font-weight: 600; color: var(--text-main);">Alamat Tujuan:</span>
+                  {{ p.alamat_pengiriman or 'Alamat profil pelanggan' }}
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 14px;">
+                  <div style="text-align: right;">
+                    <div style="font-size: 12px; color: var(--text-muted);">Total Tagihan:</div>
+                    <div style="font-size: 18px; font-weight: 800; color: var(--accent-emerald);">{{ p.total_harga | rupiah }}</div>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-emerald btn-sm"
+                    onclick="openOrderTracking(event, {{ p.id }})"
+                  >
+                    <i data-lucide="map-pin" class="lucide-sm"></i>
+                    <span>Lacak Pengiriman</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state">
+            <div class="empty-icon">
+              <i data-lucide="clipboard-list" class="lucide-xl"></i>
+            </div>
+            <h3 style="margin-bottom: 8px;">Belum Ada Riwayat Pesanan</h3>
+            <p style="color: var(--text-muted); font-size: 14.5px; margin-bottom: 22px;">Anda belum melakukan transaksi pemesanan apapun.</p>
+            <a href="/" class="btn btn-primary">
+              <i data-lucide="shopping-bag" class="lucide-sm"></i>
+              <span>Mulai Berbelanja</span>
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- MODAL POP-UP LIVE ORDER TRACKING (Leaflet.js + Stepper) -->
+    <div class="modal-backdrop" id="trackingModalBackdrop" onclick="handleBackdropClick(event)">
+      <div class="modal-dialog-tracking" id="trackingModalDialog">
+        <div class="modal-header-tracking">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 34px; height: 34px; border-radius: var(--radius-md); background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="map-pin" class="lucide-sm"></i>
+            </div>
+            <div>
+              <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-main);" id="mOrderTitle">
+                Pelacakan Pesanan
+              </h3>
+              <span id="mOrderStatusBadge" class="badge badge-primary" style="font-size: 11px; margin-top: 2px;">
+                Memuat Status...
+              </span>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="closeTrackingModal()" style="padding: 5px 8px;">
+            <i data-lucide="x" class="lucide-sm"></i>
+          </button>
+        </div>
+
+        <div class="modal-body-tracking">
+          <!-- Stepper Progres -->
+          <div class="modal-stepper">
+            <div class="modal-stepper-progress" id="mStepperProgress" style="width: 0%;"></div>
+            <div class="m-step" id="mStep1">
+              <div class="m-step-icon"><i data-lucide="credit-card" class="lucide-sm"></i></div>
+              <div class="m-step-label">Menunggu Bayar</div>
+            </div>
+            <div class="m-step" id="mStep2">
+              <div class="m-step-icon"><i data-lucide="package" class="lucide-sm"></i></div>
+              <div class="m-step-label">Diproses</div>
+            </div>
+            <div class="m-step" id="mStep3">
+              <div class="m-step-icon"><i data-lucide="truck" class="lucide-sm"></i></div>
+              <div class="m-step-label">Dikirim</div>
+            </div>
+            <div class="m-step" id="mStep4">
+              <div class="m-step-icon"><i data-lucide="check" class="lucide-sm"></i></div>
+              <div class="m-step-label">Selesai</div>
+            </div>
+          </div>
+
+          <!-- Wadah Peta Leaflet Modal -->
+          <div id="modalMapContainer"></div>
+
+          <!-- Rincian Penerima & Pengiriman -->
+          <div style="background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 16px; font-size: 13px; line-height: 1.5; margin-bottom: 14px;">
+            <div style="margin-bottom: 6px;">
+              <span style="color: var(--text-muted); font-size: 11.5px; display: block;">Penerima & Nomor HP:</span>
+              <strong id="mRecipientName" style="color: var(--text-main);">-</strong> &bull; <span id="mRecipientPhone">-</span>
+            </div>
+            <div style="margin-bottom: 6px;">
+              <span style="color: var(--text-muted); font-size: 11.5px; display: block;">Alamat Tujuan:</span>
+              <span id="mRecipientAddress" style="color: var(--text-main);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-muted); font-size: 11.5px; display: block;">Metode Pembayaran:</span>
+              <span class="badge badge-info" id="mPaymentMethod" style="font-size: 11.5px;">-</span>
+            </div>
+          </div>
+
+          <!-- Tombol Navigasi Modal -->
+          <div style="display: flex; justify-content: space-between; align-items: center; pt: 8px;">
+            <span style="font-size: 13px; color: var(--text-muted);">
+              Total: <strong id="mTotalPrice" style="color: var(--accent-emerald); font-size: 15px;">Rp 0</strong>
+            </span>
+            <div style="display: flex; gap: 8px;">
+              <a href="#" id="mLinkFullPage" class="btn btn-primary btn-sm" target="_blank">
+                <i data-lucide="external-link" class="lucide-sm"></i>
+                <span>Buka Halaman Penuh</span>
+              </a>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="closeTrackingModal()">
+                <span>Tutup</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Script Modal Tracking & Leaflet Maps -->
+    <script>
+      let modalMap = null;
+
+      function openOrderTracking(event, orderId) {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        const backdrop = document.getElementById('trackingModalBackdrop');
+        backdrop.classList.add('show');
+
+        document.getElementById('mOrderTitle').textContent = `Pelacakan Pesanan #${orderId}`;
+        document.getElementById('mLinkFullPage').href = `/lacak-pesanan/${orderId}`;
+
+        // Fetch data pelacakan dari server (dukung format JSON)
+        fetch(`/lacak-pesanan/${orderId}?format=json`, {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+          .then(res => {
+            if (!res.ok) throw new Error('Data pesanan tidak dapat dimuat');
+            return res.json();
+          })
+          .then(data => {
+            // Update Text Data
+            document.getElementById('mRecipientName').textContent = data.nama_pembeli || 'Pelanggan';
+            document.getElementById('mRecipientPhone').textContent = data.telepon_pembeli || data.no_hp || '-';
+            document.getElementById('mRecipientAddress').textContent = data.alamat_tujuan || data.alamat_pengiriman || 'Alamat belum diatur';
+            document.getElementById('mPaymentMethod').textContent = data.metode_pembayaran || 'Transfer Bank';
+            document.getElementById('mTotalPrice').textContent = data.total_harga_format || `Rp ${data.total_harga}`;
+
+            // Update Status Badge
+            const badge = document.getElementById('mOrderStatusBadge');
+            const st = data.status;
+            let stText = st;
+            let badgeClass = 'badge badge-secondary';
+
+            if (st === 'menunggu_pembayaran') {
+              stText = 'Menunggu Pembayaran';
+              badgeClass = 'badge badge-warning';
+            } else if (st === 'diproses' || st === 'dibayar') {
+              stText = 'Mempersiapkan Paket';
+              badgeClass = 'badge badge-warning';
+            } else if (st === 'dikirim') {
+              stText = 'Paket Sedang Dikirim';
+              badgeClass = 'badge badge-primary';
+            } else if (st === 'selesai') {
+              stText = 'Pesanan Selesai';
+              badgeClass = 'badge badge-success';
+            }
+            badge.textContent = stText;
+            badge.className = badgeClass;
+
+            // Update Stepper
+            const pBar = document.getElementById('mStepperProgress');
+            ['mStep1', 'mStep2', 'mStep3', 'mStep4'].forEach(id => {
+              const el = document.getElementById(id);
+              el.classList.remove('active', 'completed');
+            });
+
+            if (st === 'menunggu_pembayaran') {
+              document.getElementById('mStep1').classList.add('active');
+              pBar.style.width = '0%';
+            } else if (st === 'diproses' || st === 'dibayar') {
+              document.getElementById('mStep1').classList.add('completed');
+              document.getElementById('mStep2').classList.add('active');
+              pBar.style.width = '33%';
+            } else if (st === 'dikirim') {
+              document.getElementById('mStep1').classList.add('completed');
+              document.getElementById('mStep2').classList.add('completed');
+              document.getElementById('mStep3').classList.add('active');
+              pBar.style.width = '66%';
+            } else if (st === 'selesai') {
+              document.getElementById('mStep1').classList.add('completed');
+              document.getElementById('mStep2').classList.add('completed');
+              document.getElementById('mStep3').classList.add('completed');
+              document.getElementById('mStep4').classList.add('completed', 'active');
+              pBar.style.width = '100%';
+            }
+
+            // Render / Update Leaflet Map
+            initModalMap(data.kurir_lat, data.kurir_lng, data.tujuan_lat, data.tujuan_lng, data.nama_pembeli);
+            lucide.createIcons();
+          })
+          .catch(err => {
+            console.error('Error fetching order tracking:', err);
+            // Tetap buka peta default dalam modal tanpa reload halaman
+            initModalMap(-6.175392, 106.827153, -6.208763, 106.845599, 'Pelanggan');
+            lucide.createIcons();
+          });
+      }
+
+      function initModalMap(kLat, kLng, dLat, dLng, recipientName) {
+        const warehouseCoords = [-6.175392, 106.827153];
+        const courierCoords = [kLat || -6.175392, kLng || 106.827153];
+        const destCoords = [dLat || -6.208763, dLng || 106.845599];
+
+        // Hapus peta sebelumnya jika sudah ada
+        if (modalMap) {
+          modalMap.remove();
+          modalMap = null;
+        }
+
+        setTimeout(() => {
+          modalMap = L.map('modalMapContainer').setView(courierCoords, 13);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap',
+            maxZoom: 19
+          }).addTo(modalMap);
+
+          // SVG Marker Icons
+          const warehouseIcon = L.divIcon({
+            className: 'custom-pin pin-warehouse',
+            html: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/></svg>',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15]
+          });
+          const courierIcon = L.divIcon({
+            className: 'custom-pin pin-courier',
+            html: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18.5" r="2.5"/><circle cx="7" cy="18.5" r="2.5"/></svg>',
+            iconSize: [34, 34],
+            iconAnchor: [17, 17]
+          });
+          const destIcon = L.divIcon({
+            className: 'custom-pin pin-destination',
+            html: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15]
+          });
+
+          const mW = L.marker(warehouseCoords, { icon: warehouseIcon }).addTo(modalMap).bindPopup('Gudang Pusat');
+          const mC = L.marker(courierCoords, { icon: courierIcon }).addTo(modalMap).bindPopup('Posisi Kurir');
+          const mD = L.marker(destCoords, { icon: destIcon }).addTo(modalMap).bindPopup(`Alamat ${recipientName}`);
+
+          L.polyline([warehouseCoords, courierCoords], { color: '#059669', weight: 4 }).addTo(modalMap);
+          L.polyline([courierCoords, destCoords], { color: '#94A3B8', weight: 3, dashArray: '5, 6' }).addTo(modalMap);
+
+          const group = new L.featureGroup([mW, mC, mD]);
+          modalMap.fitBounds(group.getBounds().pad(0.15));
+        }, 100);
+      }
+
+      function closeTrackingModal() {
+        document.getElementById('trackingModalBackdrop').classList.remove('show');
+        if (modalMap) {
+          modalMap.remove();
+          modalMap = null;
+        }
+      }
+
+      function handleBackdropClick(e) {
+        if (e.target.id === 'trackingModalBackdrop') {
+          closeTrackingModal();
+        }
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeTrackingModal();
+      });
+
+      // Dark Mode Toggle Logic
+      function toggleDarkMode() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+          document.documentElement.removeAttribute('data-theme');
+          localStorage.setItem('theme', 'light');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          localStorage.setItem('theme', 'dark');
+        }
+        if (window.lucide) lucide.createIcons();
+      }
+
+      // Pemicu Lucide Icons
+      lucide.createIcons();
+    </script>
+  </body>
+</html>

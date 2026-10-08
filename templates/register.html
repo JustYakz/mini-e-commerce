@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Daftar Akun Baru - Barokah E-Commerce</title>
+    <!-- Dark Mode Init Script -->
+    <script>(function(){if(localStorage.getItem('theme')==='dark'||(!localStorage.getItem('theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.setAttribute('data-theme','dark');})();</script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Core Design Tokens Stylesheet -->
+    <link rel="stylesheet" href="/static/css/style.css" />
+
+    <style>
+      .auth-wrapper {
+        min-height: 85vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+      }
+      .auth-card {
+        max-width: 460px;
+        width: 100%;
+        background: var(--bg-surface);
+        padding: 36px 32px;
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--border-color);
+      }
+      .auth-header {
+        text-align: center;
+        margin-bottom: 24px;
+      }
+      .auth-icon-box {
+        width: 52px;
+        height: 52px;
+        border-radius: var(--radius-lg);
+        background: var(--primary-light);
+        color: var(--primary);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+      }
+      .auth-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 6px;
+        color: var(--text-main);
+      }
+      .auth-subtitle {
+        color: var(--text-muted);
+        font-size: 13.5px;
+        margin: 0;
+      }
+      .auth-footer {
+        text-align: center;
+        margin-top: 22px;
+        padding-top: 18px;
+        border-top: 1px solid var(--border-subtle);
+        font-size: 13.5px;
+        color: var(--text-muted);
+      }
+      .auth-back {
+        text-align: center;
+        margin-top: 14px;
+      }
+      .auth-back a {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text-muted);
+        font-size: 13px;
+      }
+      .auth-back a:hover {
+        color: var(--text-main);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="auth-wrapper">
+      <div class="auth-card" style="position: relative;">
+        <div style="position: absolute; top: 16px; right: 16px;">
+          <button type="button" class="btn-theme-toggle" onclick="toggleDarkMode()" title="Ubah Tema Gelap/Terang">
+            <i data-lucide="moon" class="lucide-sm"></i>
+          </button>
+        </div>
+        <div class="auth-header">
+          <div class="auth-icon-box">
+            <i data-lucide="user-plus" class="lucide-lg"></i>
+          </div>
+          <h2 class="auth-title">Buat Akun Baru</h2>
+          <p class="auth-subtitle">Daftar sekarang untuk kemudahan belanja & lacak pengiriman</p>
+        </div>
+
+        <!-- Flash Notification Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-container">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                  <i data-lucide="{% if category == 'success' %}check-circle{% elif category == 'danger' %}alert-circle{% else %}info{% endif %}"></i>
+                  <span>{{ message }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <form action="/register" method="POST" id="regForm">
+          <div class="form-group">
+            <label class="form-label" for="regNama">
+              <span>Nama Lengkap</span>
+              <span style="color: var(--accent-rose);">*</span>
+            </label>
+            <div class="input-with-icon">
+              <i data-lucide="user" class="input-icon"></i>
+              <input
+                type="text"
+                id="regNama"
+                name="nama"
+                placeholder="Contoh: Budi Santoso"
+                class="form-control"
+                required
+                autofocus
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="regEmail">
+              <span>Alamat Email</span>
+              <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 400;">(Opsional jika ada No. HP)</span>
+            </label>
+            <div class="input-with-icon">
+              <i data-lucide="mail" class="input-icon"></i>
+              <input
+                type="email"
+                id="regEmail"
+                name="email"
+                placeholder="budi@email.com"
+                class="form-control"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="regHp">
+              <span>Nomor WhatsApp / HP</span>
+              <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 400;">(Opsional jika ada Email)</span>
+            </label>
+            <div class="input-with-icon">
+              <i data-lucide="phone" class="input-icon"></i>
+              <input
+                type="text"
+                id="regHp"
+                name="no_hp"
+                placeholder="Contoh: 081234567890"
+                class="form-control"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="regPass">
+              <span>Password</span>
+              <span style="color: var(--accent-rose);">*</span>
+            </label>
+            <div class="input-with-icon">
+              <i data-lucide="lock" class="input-icon"></i>
+              <input
+                type="password"
+                id="regPass"
+                name="password"
+                placeholder="Minimal 4 karakter"
+                minlength="4"
+                class="form-control"
+                required
+              />
+            </div>
+          </div>
+
+          <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="shield-check" class="lucide-sm" style="color: var(--accent-emerald);"></i>
+            <span>Setidaknya salah satu antara Email atau No HP wajib diisi.</span>
+          </div>
+
+          <button type="submit" class="btn btn-emerald btn-block" style="padding: 12px; font-size: 15px;">
+            <i data-lucide="check" class="lucide-sm"></i>
+            <span>Daftar Akun Sekarang</span>
+          </button>
+        </form>
+
+        <div class="auth-footer">
+          Sudah punya akun? <a href="/login" style="font-weight: 600; color: var(--primary);">Masuk di sini</a>
+        </div>
+        <div class="auth-back">
+          <a href="/">
+            <i data-lucide="arrow-left" class="lucide-sm"></i>
+            <span>Kembali ke Katalog Utama</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Validasi Email atau No HP -->
+    <script>
+      document.getElementById('regForm').addEventListener('submit', function (e) {
+        const email = document.getElementById('regEmail').value.trim();
+        const hp = document.getElementById('regHp').value.trim();
+        if (!email && !hp) {
+          e.preventDefault();
+          alert('Mohon isi salah satu dari Alamat Email atau Nomor HP!');
+        }
+      });
+
+      // Dark Mode Toggle Logic
+      function toggleDarkMode() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+          document.documentElement.removeAttribute('data-theme');
+          localStorage.setItem('theme', 'light');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          localStorage.setItem('theme', 'dark');
+        }
+        if (window.lucide) lucide.createIcons();
+      }
+
+      // Pemicu Lucide Icons
+      lucide.createIcons();
+    </script>
+  </body>
+</html>

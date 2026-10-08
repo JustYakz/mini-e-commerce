@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kelola Transaksi & Pengiriman - Admin</title>
+    <!-- Dark Mode Init Script -->
+    <script>(function(){if(localStorage.getItem('theme')==='dark'||(!localStorage.getItem('theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.setAttribute('data-theme','dark');})();</script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Core Design Tokens Stylesheet -->
+    <link rel="stylesheet" href="/static/css/style.css" />
+
+    <style>
+      .admin-wrapper {
+        max-width: 1100px;
+        margin: 36px auto;
+        padding: 0 20px;
+      }
+      .admin-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-xl);
+        padding: 32px;
+        box-shadow: var(--shadow-sm);
+      }
+      .top-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border-color);
+        flex-wrap: wrap;
+        gap: 14px;
+      }
+      .page-title-box {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .page-title-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: var(--radius-lg);
+        background: var(--primary-light);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .card-order {
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 22px;
+        margin-bottom: 24px;
+        background: var(--bg-surface);
+        box-shadow: var(--shadow-xs);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+      .card-order:hover {
+        border-color: #cbd5e1;
+        box-shadow: var(--shadow-sm);
+      }
+      .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 1px solid var(--border-subtle);
+        padding-bottom: 16px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      .order-meta strong {
+        font-size: 15.5px;
+        color: var(--text-main);
+      }
+      .order-date {
+        color: var(--text-muted);
+        font-size: 12.5px;
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .address-box {
+        background: var(--bg-subtle);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 12px 14px;
+        font-size: 13px;
+        line-height: 1.5;
+        margin-bottom: 16px;
+      }
+      .status-edit-panel {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: var(--radius-md);
+        padding: 14px 16px;
+        margin-top: 14px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: flex-end;
+      }
+      select.form-select {
+        padding: 8px 12px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border-color);
+        font-family: var(--font-family);
+        font-size: 13.5px;
+        background: var(--bg-surface);
+        color: var(--text-main);
+        outline: none;
+      }
+      select.form-select:focus {
+        border-color: var(--border-focus);
+      }
+      .item-list {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 14px;
+      }
+      .item-list td {
+        padding: 8px 6px;
+        border-bottom: 1px solid var(--border-subtle);
+        font-size: 13.5px;
+        vertical-align: middle;
+      }
+      .img-thumb {
+        width: 42px;
+        height: 42px;
+        object-fit: cover;
+        border-radius: var(--radius-md);
+        vertical-align: middle;
+        margin-right: 10px;
+        background: var(--bg-subtle);
+        border: 1px solid var(--border-color);
+      }
+      .order-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid var(--border-subtle);
+        padding-top: 14px;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .total-amount {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--accent-emerald);
+      }
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+      }
+      .empty-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: var(--radius-full);
+        background: var(--bg-subtle);
+        color: var(--text-light);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="admin-wrapper">
+      <div class="admin-card">
+        <!-- Top Nav Admin -->
+        <div class="top-nav">
+          <div class="page-title-box">
+            <span class="page-title-icon">
+              <i data-lucide="clipboard-list"></i>
+            </span>
+            <div>
+              <h2 style="margin: 0; font-size: 21px;">Kelola Transaksi & Pelacakan Kurir</h2>
+              <small style="color: var(--text-muted);">Pantau pesanan masuk, ubah status pengiriman & perbarui GPS kurir</small>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button type="button" class="btn-theme-toggle" onclick="toggleDarkMode()" title="Ubah Tema Gelap/Terang">
+              <i data-lucide="moon" class="lucide-sm"></i>
+            </button>
+            <a href="/" class="btn btn-secondary btn-sm">
+              <i data-lucide="arrow-left" class="lucide-sm"></i>
+              <span>Kembali ke Katalog</span>
+            </a>
+            <span class="badge badge-primary">
+              <i data-lucide="shield-check" class="lucide-sm"></i>
+              <span>Admin Panel</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Flash Notification Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-container" style="margin-bottom: 20px;">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                  <i data-lucide="{% if category == 'success' %}check-circle{% elif category == 'danger' %}alert-circle{% else %}info{% endif %}"></i>
+                  <span>{{ message }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Daftar Pesanan Pelanggan -->
+        {% if pesanan_list %}
+          {% for p in pesanan_list %}
+            <div class="card-order">
+              <!-- Header Info Pesanan -->
+              <div class="order-header">
+                <div class="order-meta">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <strong>Pesanan #{{ p.id }}</strong>
+                    <span class="badge badge-{% if p.status == 'selesai' %}success{% elif p.status == 'dikirim' %}primary{% elif p.status in ['diproses', 'dibayar', 'menunggu_pembayaran'] %}warning{% else %}secondary{% endif %}">
+                      {% if p.status == 'menunggu_pembayaran' %}
+                        Menunggu Pembayaran
+                      {% elif p.status == 'diproses' or p.status == 'dibayar' %}
+                        Mempersiapkan Paket
+                      {% elif p.status == 'dikirim' %}
+                        Paket Dikirim
+                      {% elif p.status == 'selesai' %}
+                        Selesai
+                      {% else %}
+                        {{ p.status | capitalize }}
+                      {% endif %}
+                    </span>
+                    <span class="badge badge-info">{{ p.metode_pembayaran or 'Transfer Bank' }}</span>
+                  </div>
+                  <div class="order-date">
+                    <i data-lucide="user" class="lucide-sm"></i>
+                    <span>Pelanggan: <strong>{{ p.nama_pembeli }}</strong></span>
+                    <span>&bull;</span>
+                    <i data-lucide="phone" class="lucide-sm"></i>
+                    <span>{{ p.telepon_pembeli }}</span>
+                    <span>&bull;</span>
+                    <i data-lucide="calendar" class="lucide-sm"></i>
+                    <span>{{ p.tanggal.strftime('%d %B %Y, %H:%M') if p.tanggal else '-' }} WIB</span>
+                  </div>
+                </div>
+
+                <!-- Tombol Buka Peta Tracking Live -->
+                <div>
+                  <a
+                    href="/lacak-pesanan/{{ p.id }}"
+                    class="btn btn-secondary btn-sm"
+                    target="_blank"
+                    title="Buka Peta Live Tracking"
+                  >
+                    <i data-lucide="map" class="lucide-sm"></i>
+                    <span>Lihat Peta Tracking</span>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Alamat Pengiriman Pelanggan -->
+              <div class="address-box">
+                <div style="font-weight: 600; color: var(--text-main); margin-bottom: 2px; display: flex; align-items: center; gap: 6px;">
+                  <i data-lucide="map-pin" class="lucide-sm" style="color: var(--accent-rose);"></i>
+                  <span>Alamat Pengiriman Pelanggan:</span>
+                </div>
+                <div style="color: var(--text-main);">{{ p.alamat_tujuan }}</div>
+              </div>
+
+              <!-- Rincian Item Pesanan -->
+              <table class="item-list">
+                {% for item in p.rincian %}
+                  <tr>
+                    <td>
+                      <div style="display: flex; align-items: center;">
+                        <img
+                          src="/static/uploads/{{ item.gambar or 'default.jpg' }}"
+                          class="img-thumb"
+                          alt="{{ item.nama_produk }}"
+                          onerror="this.onerror=null; this.src='/static/uploads/default.jpg';"
+                        />
+                        <span style="font-weight: 600; color: var(--text-main);">{{ item.nama_produk }}</span>
+                      </div>
+                    </td>
+                    <td style="color: var(--text-muted); font-size: 13px;">{{ item.jumlah }} x {{ item.harga_satuan | rupiah }}</td>
+                    <td style="text-align: right; font-weight: 600; color: var(--text-main);">{{ item.subtotal | rupiah }}</td>
+                  </tr>
+                {% endfor %}
+              </table>
+
+              <!-- Form Update Status & Update Koordinat Kurir -->
+              <form
+                action="/update-status/{{ p.id }}"
+                method="POST"
+                class="status-edit-panel"
+              >
+                <!-- Select Status -->
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">
+                    Status Pesanan:
+                  </label>
+                  <select name="status" class="form-select">
+                    <option value="menunggu_pembayaran" {% if p.status == 'menunggu_pembayaran' %}selected{% endif %}>
+                      Menunggu Pembayaran
+                    </option>
+                    <option value="diproses" {% if p.status in ['diproses', 'dibayar', 'pending'] %}selected{% endif %}>
+                      Mempersiapkan Paket (Diproses)
+                    </option>
+                    <option value="dikirim" {% if p.status == 'dikirim' %}selected{% endif %}>
+                      Dikirim ke Alamat Pelanggan
+                    </option>
+                    <option value="selesai" {% if p.status == 'selesai' %}selected{% endif %}>
+                      Selesai / Diterima
+                    </option>
+                    <option value="dibatalkan" {% if p.status == 'dibatalkan' %}selected{% endif %}>
+                      Dibatalkan
+                    </option>
+                  </select>
+                </div>
+
+                <!-- Input Koordinat Kurir Lat/Lng -->
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">
+                    Posisi Kurir (Latitude):
+                  </label>
+                  <input
+                    type="text"
+                    name="kurir_lat"
+                    value="{{ p.kurir_lat or -6.175392 }}"
+                    class="form-control"
+                    style="width: 140px; padding: 7px 10px; font-size: 13px;"
+                    placeholder="-6.175392"
+                  />
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">
+                    Posisi Kurir (Longitude):
+                  </label>
+                  <input
+                    type="text"
+                    name="kurir_lng"
+                    value="{{ p.kurir_lng or 106.827153 }}"
+                    class="form-control"
+                    style="width: 140px; padding: 7px 10px; font-size: 13px;"
+                    placeholder="106.827153"
+                  />
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-emerald btn-sm" style="padding: 9px 16px;">
+                  <i data-lucide="save" class="lucide-sm"></i>
+                  <span>Simpan Perubahan</span>
+                </button>
+              </form>
+
+              <!-- Footer Pesanan -->
+              <div class="order-footer">
+                <div>
+                  <a
+                    href="/hapus-pesanan/{{ p.id }}"
+                    class="btn btn-danger-outline btn-sm"
+                    onclick="return confirm('Apakah Anda yakin ingin menghapus pesanan #{{ p.id }} ini?');"
+                  >
+                    <i data-lucide="trash-2" class="lucide-sm"></i>
+                    <span>Hapus Pesanan</span>
+                  </a>
+                </div>
+                <div style="display: flex; align-items: baseline; gap: 8px;">
+                  <span style="font-size: 13.5px; color: var(--text-muted);">Total Tagihan:</span>
+                  <span class="total-amount">{{ p.total_harga | rupiah }}</span>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state">
+            <div class="empty-icon">
+              <i data-lucide="inbox" class="lucide-xl"></i>
+            </div>
+            <h3 style="margin-bottom: 8px;">Belum Ada Pesanan Masuk</h3>
+            <p style="color: var(--text-muted); font-size: 14.5px;">Belum ada customer yang melakukan transaksi pembelian.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+      function toggleDarkMode() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+          document.documentElement.removeAttribute('data-theme');
+          localStorage.setItem('theme', 'light');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          localStorage.setItem('theme', 'dark');
+        }
+        if (window.lucide) lucide.createIcons();
+      }
+
+      lucide.createIcons();
+    </script>
+  </body>
+</html>

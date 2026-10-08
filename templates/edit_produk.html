@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Produk - Barokah E-Commerce</title>
+    <!-- Dark Mode Init Script -->
+    <script>(function(){if(localStorage.getItem('theme')==='dark'||(!localStorage.getItem('theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.setAttribute('data-theme','dark');})();</script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Core Design Tokens Stylesheet -->
+    <link rel="stylesheet" href="/static/css/style.css" />
+
+    <style>
+      .form-wrapper {
+        max-width: 680px;
+        margin: 40px auto;
+        padding: 0 20px;
+      }
+      .form-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-xl);
+        padding: 36px 32px;
+        box-shadow: var(--shadow-sm);
+      }
+      .form-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 26px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border-color);
+      }
+      .form-header-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .form-header-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: var(--radius-lg);
+        background: var(--primary-light);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .form-row {
+        display: flex;
+        gap: 16px;
+      }
+      .form-row .form-group {
+        flex: 1;
+      }
+      .actions-bar {
+        display: flex;
+        gap: 12px;
+        margin-top: 26px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-subtle);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="form-wrapper">
+      <div class="form-card">
+        <div class="form-header">
+          <div class="form-header-left">
+            <div class="form-header-icon">
+              <i data-lucide="edit" class="lucide-lg"></i>
+            </div>
+            <div>
+              <h2 style="margin: 0; font-size: 22px;">Edit Produk</h2>
+              <small style="color: var(--text-muted);">Perbarui data, kelola galeri foto & stok produk</small>
+            </div>
+          </div>
+          <button type="button" class="btn-theme-toggle" onclick="toggleDarkMode()" title="Ubah Tema Gelap/Terang">
+            <i data-lucide="moon" class="lucide-sm"></i>
+          </button>
+        </div>
+
+        <!-- Flash Notification Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-container">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                  <i data-lucide="{% if category == 'success' %}check-circle{% elif category == 'danger' %}alert-circle{% else %}info{% endif %}"></i>
+                  <span>{{ message }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <form action="/edit-produk/{{ produk.id }}" method="POST" enctype="multipart/form-data">
+          <div class="form-group">
+            <label class="form-label">Nama Produk</label>
+            <input
+              type="text"
+              name="nama_produk"
+              value="{{ produk.nama_produk }}"
+              class="form-control"
+              required
+              autofocus
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Kategori Produk</label>
+            <select name="kategori_id" class="form-control" required>
+              {% for k in kategori_list %}
+                <option value="{{ k.id }}" {% if k.id == produk.kategori_id %}selected{% endif %}>
+                  {{ k.nama_kategori }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Harga Satuan (Rp)</label>
+              <input
+                type="number"
+                name="harga"
+                value="{{ produk.harga | int }}"
+                min="0"
+                step="100"
+                class="form-control"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Jumlah Stok</label>
+              <input
+                type="number"
+                name="stok"
+                value="{{ produk.stok }}"
+                min="0"
+                class="form-control"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Deskripsi Produk</label>
+            <textarea
+              name="deskripsi"
+              rows="3"
+              class="form-control"
+            >{{ produk.deskripsi or '' }}</textarea>
+          </div>
+
+          <!-- Galeri Foto Saat Ini & Hapus Foto Individual -->
+          <div class="form-group">
+            <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Galeri Foto Produk Saat Ini</span>
+              <span class="badge badge-primary" style="font-size: 11px;">
+                {{ galeri_foto | length if galeri_foto else (1 if produk.gambar else 0) }} Foto
+              </span>
+            </label>
+
+            {% if galeri_foto and galeri_foto | length > 0 %}
+              <div class="admin-gallery-grid">
+                {% for f in galeri_foto %}
+                  <div class="admin-gallery-item">
+                    <img
+                      src="/static/uploads/{{ f.gambar }}"
+                      alt="Foto Galeri"
+                      onerror="this.onerror=null; this.src='/static/uploads/default.jpg';"
+                    />
+                    {% if loop.first or f.is_primary %}
+                      <span class="admin-gallery-badge">Foto Utama</span>
+                    {% endif %}
+                    {% if galeri_foto | length > 1 %}
+                      <a
+                        href="/hapus-foto-produk/{{ f.id }}"
+                        class="admin-gallery-delete"
+                        onclick="return confirm('Apakah Anda yakin ingin menghapus foto ini dari galeri produk?');"
+                        title="Hapus foto ini dari galeri"
+                      >
+                        <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
+                      </a>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="img-preview-box">
+                <img
+                  src="/static/uploads/{{ produk.gambar or 'default.jpg' }}"
+                  class="img-preview"
+                  alt="Foto Produk"
+                  onerror="this.onerror=null; this.src='/static/uploads/default.jpg';"
+                />
+                <div style="font-size: 13px; color: var(--text-muted);">
+                  Berkas: <strong style="color: var(--text-main);">{{ produk.gambar or 'default.jpg' }}</strong>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Unggah Tambahan Foto Baru -->
+          <div class="form-group" style="margin-top: 18px;">
+            <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Tambah Foto Baru ke Galeri</span>
+              <span id="newPhotoBadge" class="badge badge-primary" style="display: none; font-size: 11px;">0 Foto Baru</span>
+            </label>
+            <input
+              type="file"
+              name="foto_galeri"
+              id="newFotoGaleriInput"
+              multiple
+              accept="image/*"
+              class="form-control"
+              style="padding: 8px;"
+              onchange="handleNewGalleryPreview(event)"
+            />
+            <small style="color: var(--text-muted); display: block; margin-top: 6px; font-size: 12.5px;">
+              Pilih satu atau beberapa foto tambahan (JPG, PNG, WEBP). Foto baru akan otomatis ditambahkan ke galeri.
+            </small>
+
+            <div id="newGalleryPreviewContainer" style="display: none; margin-top: 12px;">
+              <small style="font-weight: 700; color: var(--text-main); display: block; margin-bottom: 8px;">
+                Pratinjau Foto Baru yang Akan Diunggah:
+              </small>
+              <div id="newGalleryPreviewGrid" class="admin-gallery-grid"></div>
+            </div>
+          </div>
+
+          <div class="actions-bar">
+            <button type="submit" class="btn btn-primary">
+              <i data-lucide="check" class="lucide-sm"></i>
+              <span>Simpan Perubahan</span>
+            </button>
+            <a href="/" class="btn btn-secondary">
+              <i data-lucide="x" class="lucide-sm"></i>
+              <span>Batal</span>
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+      function toggleDarkMode() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+          document.documentElement.removeAttribute('data-theme');
+          localStorage.setItem('theme', 'light');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          localStorage.setItem('theme', 'dark');
+        }
+        if (window.lucide) lucide.createIcons();
+      }
+
+      function handleNewGalleryPreview(event) {
+        const files = event.target.files;
+        const container = document.getElementById('newGalleryPreviewContainer');
+        const grid = document.getElementById('newGalleryPreviewGrid');
+        const badge = document.getElementById('newPhotoBadge');
+        grid.innerHTML = '';
+
+        if (files && files.length > 0) {
+          container.style.display = 'block';
+          badge.style.display = 'inline-block';
+          badge.textContent = files.length + ' Foto Baru';
+
+          Array.from(files).forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              const item = document.createElement('div');
+              item.className = 'admin-gallery-item';
+              item.innerHTML = `<img src="${e.target.result}" alt="Preview Baru ${index + 1}">`;
+              grid.appendChild(item);
+            };
+            reader.readAsDataURL(file);
+          });
+        } else {
+          container.style.display = 'none';
+          badge.style.display = 'none';
+        }
+      }
+
+      lucide.createIcons();
+    </script>
+  </body>
+</html>

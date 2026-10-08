@@ -1,0 +1,14 @@
+{
+  "python.defaultInterpreterPath": "C:\\Python314\\python.exe",
+  "terminal.integrated.env.windows": {
+    "PYTHONPATH": "C:\\Users\\Zaky\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages"
+  },
+  "html.validate.scripts": false,
+  "html.validate.styles": false,
+  "files.associations": {
+    "**/templates/*.html": "jinja-html"
+  },
+  "emmet.includeLanguages": {
+    "jinja-html": "html"
+  }
+}

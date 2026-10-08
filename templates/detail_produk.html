@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ produk.nama_produk }} - Barokah E-Commerce</title>
+    <!-- Dark Mode Init Script -->
+    <script>(function(){if(localStorage.getItem('theme')==='dark'||(!localStorage.getItem('theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.setAttribute('data-theme','dark');})();</script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Core Design Tokens Stylesheet -->
+    <link rel="stylesheet" href="/static/css/style.css" />
+
+    <style>
+      .detail-navbar {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border-color);
+        padding: 14px 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: var(--shadow-xs);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        color: var(--text-main);
+      }
+      .brand-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius-md);
+        background: var(--primary-light);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .brand h1 {
+        margin: 0;
+        font-size: 19px;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+      .detail-container {
+        max-width: 1100px;
+        margin: 32px auto;
+        padding: 0 24px;
+      }
+      .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 24px;
+      }
+      .breadcrumb a {
+        color: var(--text-muted);
+        text-decoration: none;
+      }
+      .breadcrumb a:hover {
+        color: var(--primary);
+      }
+      .product-main-grid {
+        display: grid;
+        grid-template-columns: 460px 1fr;
+        gap: 36px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-xl);
+        padding: 32px;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 36px;
+      }
+      @media (max-width: 868px) {
+        .product-main-grid {
+          grid-template-columns: 1fr;
+          gap: 24px;
+          padding: 20px;
+        }
+      }
+      .detail-image-box {
+        width: 100%;
+        height: 420px;
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        background: var(--bg-subtle);
+        position: relative;
+      }
+      .detail-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+      }
+      .detail-image:hover {
+        transform: scale(1.03);
+      }
+      .detail-info {
+        display: flex;
+        flex-direction: column;
+      }
+      .product-title-lg {
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--text-main);
+        line-height: 1.3;
+        margin: 0 0 12px;
+      }
+      .rating-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: var(--text-muted);
+        margin-bottom: 18px;
+      }
+      .star-icon {
+        color: #f59e0b;
+        fill: #f59e0b;
+      }
+      .product-price-lg {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--accent-emerald);
+        margin-bottom: 20px;
+      }
+      .meta-box {
+        display: flex;
+        gap: 20px;
+        padding: 14px 0;
+        border-top: 1px solid var(--border-subtle);
+        border-bottom: 1px solid var(--border-subtle);
+        margin-bottom: 20px;
+      }
+      .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13.5px;
+        color: var(--text-muted);
+      }
+      .meta-val {
+        font-weight: 600;
+        color: var(--text-main);
+      }
+      .description-content {
+        font-size: 14.5px;
+        line-height: 1.7;
+        color: var(--text-muted);
+        margin-bottom: 28px;
+        flex: 1;
+      }
+      .action-buttons {
+        display: flex;
+        gap: 14px;
+        margin-top: auto;
+      }
+
+      /* Review Section */
+      .reviews-section {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-xl);
+        padding: 32px;
+        box-shadow: var(--shadow-sm);
+      }
+      .reviews-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 24px;
+      }
+      .review-card {
+        padding: 18px 0;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .review-card:last-child {
+        border-bottom: none;
+      }
+      .star-selector {
+        display: flex;
+        gap: 6px;
+        cursor: pointer;
+      }
+      .star-radio {
+        display: none;
+      }
+      .star-label {
+        cursor: pointer;
+        color: var(--border-color);
+        transition: color 0.15s;
+      }
+      .star-label.active,
+      .star-label:hover {
+        color: #f59e0b;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navbar -->
+    <header class="detail-navbar">
+      <a href="/" class="brand">
+        <img src="/static/images/logo.png" alt="Barokah E-Commerce" class="brand-logo-img" />
+        <h1>Barokah E-Commerce</h1>
+      </a>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button type="button" class="btn-theme-toggle" onclick="toggleDarkMode()" title="Ubah Tema Gelap/Terang">
+          <i data-lucide="moon" class="lucide-sm"></i>
+        </button>
+        <a href="/" class="btn btn-secondary btn-sm">
+          <i data-lucide="arrow-left" class="lucide-sm"></i>
+          <span>Katalog</span>
+        </a>
+        <a href="/keranjang" class="btn btn-secondary btn-sm">
+          <i data-lucide="shopping-cart" class="lucide-sm"></i>
+          <span>Keranjang</span>
+        </a>
+        {% if session.get('user_id') %}
+          <a href="/profil" class="nav-user-profile-link" title="Buka Profil Saya">
+            {% if session.get('foto_profil') %}
+              <img src="/static/uploads/{{ session['foto_profil'] }}" alt="{{ session['nama'] }}" class="nav-user-avatar-img" onerror="this.src='/static/images/default_avatar.svg';" />
+            {% else %}
+              <img src="/static/images/default_avatar.svg" alt="{{ session['nama'] }}" class="nav-user-avatar-img" />
+            {% endif %}
+            <span><strong>{{ session['nama'] }}</strong></span>
+          </a>
+        {% endif %}
+      </div>
+    </header>
+
+    <main class="detail-container">
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-container" style="margin-bottom: 20px;">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">
+                <i data-lucide="{% if category == 'success' %}check-circle{% elif category == 'danger' %}alert-circle{% else %}info{% endif %}"></i>
+                <span>{{ message }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <!-- Breadcrumbs -->
+      <nav class="breadcrumb">
+        <a href="/">Beranda</a>
+        <i data-lucide="chevron-right" class="lucide-sm"></i>
+        <span>{{ produk.nama_kategori or 'Kategori' }}</span>
+        <i data-lucide="chevron-right" class="lucide-sm"></i>
+        <span style="color: var(--text-main); font-weight: 600;">{{ produk.nama_produk }}</span>
+      </nav>
+
+      <!-- Main Product Grid -->
+      <section class="product-main-grid">
+        <!-- Foto Produk & Galeri Thumbnail -->
+        <div>
+          <div class="detail-image-box">
+            <img
+              id="mainProductImg"
+              src="/static/uploads/{{ produk.gambar or 'default.jpg' }}"
+              alt="{{ produk.nama_produk }}"
+              class="detail-image"
+              onerror="this.onerror=null; this.src='/static/uploads/default.jpg';"
+            />
+          </div>
+
+          {% if galeri_foto and galeri_foto | length > 1 %}
+            <div class="gallery-strip">
+              {% for f in galeri_foto %}
+                <img
+                  src="/static/uploads/{{ f.gambar }}"
+                  alt="Thumbnail {{ loop.index }}"
+                  class="gallery-thumb {% if loop.first or f.gambar == produk.gambar %}active{% endif %}"
+                  onclick="switchMainImage(this, '/static/uploads/{{ f.gambar }}')"
+                  onerror="this.onerror=null; this.src='/static/uploads/default.jpg';"
+                />
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Rincian Produk -->
+        <div class="detail-info">
+          <div>
+            <span class="badge badge-primary" style="margin-bottom: 10px; display: inline-block;">
+              {{ produk.nama_kategori or 'Umum' }}
+            </span>
+            <h1 class="product-title-lg">{{ produk.nama_produk }}</h1>
+          </div>
+
+          <!-- Rating & Ulasan Info -->
+          <div class="rating-bar">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              {% if produk.total_ulasan > 0 and produk.rating_avg > 0 %}
+                <i data-lucide="star" class="lucide-sm" style="color: #f59e0b; fill: #f59e0b;"></i>
+                <strong style="color: var(--text-main); font-size: 15px;">{{ "%.1f" | format(produk.rating_avg) }}</strong>
+                <span style="font-size: 13px; color: var(--text-muted);">/ 5.0</span>
+              {% else %}
+                <i data-lucide="star" class="lucide-sm" style="color: #94a3b8;"></i>
+                <span style="color: var(--text-muted); font-size: 13.5px; font-weight: 600;">0 (Belum ada rating)</span>
+              {% endif %}
+            </div>
+            <span>&bull;</span>
+            <span>{{ produk.total_ulasan or 0 }} Ulasan Pelanggan</span>
+          </div>
+
+          <!-- Harga -->
+          <div class="product-price-lg">
+            {{ produk.harga | rupiah }}
+          </div>
+
+          <!-- Metadata Stok & Kategori -->
+          <div class="meta-box">
+            <div class="meta-item">
+              <i data-lucide="package-check" class="lucide-sm"></i>
+              <span>Status Stok:</span>
+              <span class="meta-val {% if produk.stok > 0 %}text-emerald{% else %}text-danger{% endif %}">
+                {% if produk.stok > 0 %}{{ produk.stok }} unit tersedia{% else %}Habis{% endif %}
+              </span>
+            </div>
+            <div class="meta-item">
+              <i data-lucide="tag" class="lucide-sm"></i>
+              <span>Kategori:</span>
+              <span class="meta-val">{{ produk.nama_kategori or 'Umum' }}</span>
+            </div>
+          </div>
+
+          <!-- Deskripsi Produk -->
+          <div class="description-content">
+            <strong style="color: var(--text-main); display: block; margin-bottom: 6px;">Deskripsi Produk:</strong>
+            {{ produk.deskripsi or 'Belum ada deskripsi lengkap untuk produk ini.' }}
+          </div>
+
+          <!-- Tombol CTA Beli / Keranjang -->
+          <div class="action-buttons">
+            {% if produk.stok > 0 %}
+              <a
+                href="/tambah-keranjang/{{ produk.id }}"
+                class="btn btn-secondary"
+                style="flex: 1; padding: 13px; font-size: 14.5px; justify-content: center;"
+              >
+                <i data-lucide="shopping-cart" class="lucide-sm"></i>
+                <span>+ Keranjang</span>
+              </a>
+              <a
+                href="/beli-sekarang/{{ produk.id }}"
+                class="btn btn-emerald"
+                style="flex: 1; padding: 13px; font-size: 14.5px; justify-content: center;"
+              >
+                <i data-lucide="zap" class="lucide-sm"></i>
+                <span>Beli Sekarang</span>
+              </a>
+            {% else %}
+              <button disabled class="btn btn-secondary" style="width: 100%; opacity: 0.6; cursor: not-allowed; justify-content: center;">
+                <i data-lucide="slash" class="lucide-sm"></i>
+                <span>Stok Produk Sedang Habis</span>
+              </button>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+
+      <!-- Ulasan & Rating Section -->
+      <section class="reviews-section">
+        <div class="reviews-header">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 38px; height: 38px; border-radius: var(--radius-md); background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="star" class="lucide"></i>
+            </div>
+            <div>
+              <h2 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-main);">
+                Ulasan & Penilaian Pelanggan
+              </h2>
+              <span style="font-size: 13px; color: var(--text-muted);">
+                Rata-rata rating <strong>{{ "%.1f" | format(produk.rating_avg or 5.0) }}</strong> dari {{ produk.total_ulasan or 0 }} pembeli
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Tambah Ulasan -->
+        {% if session.get('user_id') %}
+          <div style="background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 28px;">
+            <h3 style="margin: 0 0 12px; font-size: 15px; font-weight: 700; color: var(--text-main);">
+              Berikan Ulasan Anda untuk Produk Ini
+            </h3>
+            <form action="/tambah-ulasan/{{ produk.id }}" method="POST">
+              <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 12px;">
+                <label style="font-size: 13.5px; font-weight: 600; color: var(--text-main);">Pilih Rating Bintang:</label>
+                <div style="display: flex; gap: 4px;" id="starPicker">
+                  {% for star in [1, 2, 3, 4, 5] %}
+                    <label style="cursor: pointer;">
+                      <input
+                        type="radio"
+                        name="rating"
+                        value="{{ star }}"
+                        style="display: none;"
+                        {% if star == 5 %}checked{% endif %}
+                        onchange="updateStars(this.value)"
+                      />
+                      <i data-lucide="star" class="lucide star-select-icon star-icon" data-val="{{ star }}"></i>
+                    </label>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 12px;">
+                <textarea
+                  name="komentar"
+                  class="form-control"
+                  rows="3"
+                  required
+                  placeholder="Ceritakan pengalaman Anda mengenai kualitas produk, packaging, dan kecepatan pengiriman..."
+                ></textarea>
+              </div>
+
+              <div style="display: flex; justify-content: flex-end;">
+                <button type="submit" class="btn btn-primary btn-sm">
+                  <i data-lucide="send" class="lucide-sm"></i>
+                  <span>Kirim Ulasan</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        {% else %}
+          <div style="padding: 14px 18px; background: var(--bg-subtle); border-radius: var(--radius-md); font-size: 13px; color: var(--text-muted); margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between;">
+            <span>Ingin memberikan ulasan untuk produk ini? Silakan login terlebih dahulu.</span>
+            <a href="/login" class="btn btn-secondary btn-sm">
+              <i data-lucide="log-in" class="lucide-sm"></i>
+              <span>Masuk Akun</span>
+            </a>
+          </div>
+        {% endif %}
+
+        <!-- Daftar Ulasan -->
+        {% if ulasan_list %}
+          <div style="display: flex; flex-direction: column;">
+            {% for ulasan in ulasan_list %}
+              <div class="review-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 36px; height: 36px; border-radius: var(--radius-full); background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">
+                      {{ (ulasan.nama_user or 'U')[:1] | upper }}
+                    </div>
+                    <div>
+                      <div style="font-size: 14px; font-weight: 700; color: var(--text-main);">
+                        {{ ulasan.nama_user or 'Pengguna' }}
+                      </div>
+                      <div style="font-size: 12px; color: var(--text-muted);">
+                        {{ ulasan.created_at.strftime('%d %B %Y') if ulasan.created_at else '-' }}
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Bintang Rating -->
+                  <div style="display: flex; gap: 2px;">
+                    {% for i in range(ulasan.rating) %}
+                      <i data-lucide="star" class="lucide-sm star-icon"></i>
+                    {% endfor %}
+                  </div>
+                </div>
+                <p style="margin: 6px 0 0 46px; font-size: 13.5px; color: var(--text-main); line-height: 1.5;">
+                  {{ ulasan.komentar }}
+                </p>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div style="text-align: center; padding: 36px 20px; color: var(--text-muted);">
+            <i data-lucide="message-square" class="lucide-xl" style="color: var(--text-light); margin-bottom: 10px;"></i>
+            <h4 style="margin: 0 0 6px; font-size: 15px; color: var(--text-main);">Belum Ada Ulasan</h4>
+            <p style="margin: 0; font-size: 13px;">Jadilah orang pertama yang mengulas produk ini!</p>
+          </div>
+        {% endif %}
+      </section>
+    </main>
+
+    <!-- Scripts -->
+    <script>
+      function toggleDarkMode() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+          document.documentElement.removeAttribute('data-theme');
+          localStorage.setItem('theme', 'light');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          localStorage.setItem('theme', 'dark');
+        }
+        if (window.lucide) lucide.createIcons();
+      }
+
+      function switchMainImage(thumbEl, imgSrc) {
+        const mainImg = document.getElementById('mainProductImg');
+        if (mainImg) {
+          mainImg.src = imgSrc;
+        }
+        document.querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active'));
+        if (thumbEl) {
+          thumbEl.classList.add('active');
+        }
+      }
+
+      function updateStars(rating) {
+        document.querySelectorAll('#starPicker .star-select-icon').forEach(icon => {
+          const val = parseInt(icon.getAttribute('data-val'));
+          if (val <= rating) {
+            icon.classList.add('star-icon');
+            icon.style.fill = '#f59e0b';
+            icon.style.color = '#f59e0b';
+          } else {
+            icon.classList.remove('star-icon');
+            icon.style.fill = 'transparent';
+            icon.style.color = '#cbd5e1';
+          }
+        });
+      }
+
+      lucide.createIcons();
+    </script>
+  </body>
+</html>
+

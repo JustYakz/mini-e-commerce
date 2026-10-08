@@ -1,0 +1,6 @@
+# Abaikan file konfigurasi sensitif
+config.php
+.env
+
+# Abaikan folder upload/cache jika ada
+/uploads/

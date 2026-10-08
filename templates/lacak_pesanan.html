@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lacak Pengiriman Pesanan #{{ pesanan.id }} - Barokah E-Commerce</title>
+    <!-- Dark Mode Init Script -->
+    <script>(function(){if(localStorage.getItem('theme')==='dark'||(!localStorage.getItem('theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.setAttribute('data-theme','dark');})();</script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Leaflet.js CSS & JS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <!-- Core Design Tokens Stylesheet -->
+    <link rel="stylesheet" href="/static/css/style.css" />
+
+    <style>
+      .tracking-navbar {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border-color);
+        padding: 14px 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: var(--shadow-xs);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        color: var(--text-main);
+      }
+      .brand-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius-md);
+        background: var(--primary-light);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .brand h1 {
+        margin: 0;
+        font-size: 19px;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+      .tracking-layout {
+        max-width: 1140px;
+        margin: 32px auto;
+        padding: 0 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+      .tracking-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-xl);
+        padding: 24px 28px;
+        box-shadow: var(--shadow-sm);
+      }
+
+      /* Step Progress Bar */
+      .stepper {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+        margin: 20px 0 10px;
+      }
+      .stepper::before {
+        content: '';
+        position: absolute;
+        top: 22px;
+        left: 36px;
+        right: 36px;
+        height: 3px;
+        background: var(--border-color);
+        z-index: 1;
+      }
+      .stepper-progress {
+        position: absolute;
+        top: 22px;
+        left: 36px;
+        height: 3px;
+        background: var(--accent-emerald);
+        z-index: 2;
+        transition: width 0.4s ease;
+      }
+      .step-item {
+        position: relative;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        width: 140px;
+      }
+      .step-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: var(--radius-full);
+        background: var(--bg-surface);
+        border: 2.5px solid var(--border-color);
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+      }
+      .step-item.active .step-icon {
+        border-color: var(--primary);
+        background: var(--primary-light);
+        color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+      }
+      .step-item.completed .step-icon {
+        border-color: var(--accent-emerald);
+        background: var(--accent-emerald);
+        color: #ffffff;
+      }
+      .step-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-top: 10px;
+      }
+      .step-item.active .step-label {
+        color: var(--primary);
+        font-weight: 700;
+      }
+      .step-item.completed .step-label {
+        color: var(--text-main);
+      }
+
+      /* Map Container */
+      #deliveryMap {
+        height: 420px;
+        width: 100%;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-color);
+        z-index: 10;
+      }
+
+      /* Custom Marker Styles */
+      .custom-pin {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        color: white;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+        font-weight: bold;
+      }
+      .pin-warehouse {
+        background: #2563EB;
+        border: 2px solid white;
+      }
+      .pin-courier {
+        background: #059669;
+        border: 2px solid white;
+        animation: pulse 1.8s infinite;
+      }
+      .pin-destination {
+        background: #DC2626;
+        border: 2px solid white;
+      }
+
+      @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.6); }
+        70% { box-shadow: 0 0 0 14px rgba(5, 150, 105, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
+      }
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+      @media (max-width: 768px) {
+        .info-grid {
+          grid-template-columns: 1fr;
+        }
+        .stepper {
+          overflow-x: auto;
+          padding-bottom: 8px;
+        }
+        .stepper::before {
+          min-width: 480px;
+        }
+        .step-item {
+          min-width: 120px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navbar -->
+    <header class="tracking-navbar">
+      <a href="/" class="brand">
+        <img src="/static/images/logo.png" alt="Barokah E-Commerce" class="brand-logo-img" />
+        <h1>Barokah E-Commerce</h1>
+      </a>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button type="button" class="btn-theme-toggle" onclick="toggleDarkMode()" title="Ubah Tema Gelap/Terang">
+          <i data-lucide="moon" class="lucide-sm"></i>
+        </button>
+        <a href="/pesanan-saya" class="btn btn-secondary btn-sm">
+          <i data-lucide="arrow-left" class="lucide-sm"></i>
+          <span>Kembali ke Pesanan Saya</span>
+        </a>
+        <a href="/profil" class="nav-user-profile-link" title="Profil Akun ({{ session.get('nama', 'User') }})">
+          {% if user_foto %}
+            <img src="/static/uploads/{{ user_foto }}" alt="Foto Profil" class="nav-user-avatar-img">
+          {% else %}
+            <img src="/static/images/default_avatar.svg" alt="Default Avatar" class="nav-user-avatar-img">
+          {% endif %}
+          <span style="font-size: 13.5px; font-weight: 600;">{{ (session.get('nama', 'Akun') or 'Akun').split(' ')[0] }}</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="tracking-layout">
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-container">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">
+                <i data-lucide="{% if category == 'success' %}check-circle{% elif category == 'danger' %}alert-circle{% else %}info{% endif %}"></i>
+                <span>{{ message }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <!-- 1. Header Ringkasan Pesanan & Status -->
+      <section class="tracking-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color);">
+          <div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: var(--text-main);">
+                Pesanan #{{ pesanan.id }}
+              </h2>
+              <span class="badge badge-{% if pesanan.status == 'selesai' %}success{% elif pesanan.status == 'dikirim' %}primary{% elif pesanan.status == 'diproses' %}warning{% elif pesanan.status == 'menunggu_pembayaran' %}warning{% else %}secondary{% endif %}">
+                {% if pesanan.status == 'menunggu_pembayaran' %}
+                  Menunggu Pembayaran
+                {% elif pesanan.status == 'diproses' or pesanan.status == 'dibayar' %}
+                  Mempersiapkan Paket
+                {% elif pesanan.status == 'dikirim' %}
+                  Paket Sedang Dikirim
+                {% elif pesanan.status == 'selesai' %}
+                  Pesanan Selesai
+                {% else %}
+                  {{ pesanan.status | capitalize }}
+                {% endif %}
+              </span>
+            </div>
+            <p style="margin: 4px 0 0; font-size: 13px; color: var(--text-muted);">
+              Waktu Transaksi: {{ pesanan.tanggal.strftime('%d %B %Y, %H:%M') if pesanan.tanggal else '-' }} WIB
+            </p>
+          </div>
+
+          <!-- Tombol Aksi Customer Sesuai Status -->
+          <div style="display: flex; gap: 10px;">
+            {% if pesanan.status == 'menunggu_pembayaran' %}
+              <a
+                href="/bayar-pesanan/{{ pesanan.id }}"
+                class="btn btn-emerald"
+                onclick="return confirm('Apakah Anda telah menyelesaikan pembayaran untuk pesanan ini?');"
+              >
+                <i data-lucide="credit-card" class="lucide-sm"></i>
+                <span>Konfirmasi Telah Bayar</span>
+              </a>
+            {% elif pesanan.status == 'dikirim' %}
+              <a
+                href="/terima-pesanan/{{ pesanan.id }}"
+                class="btn btn-emerald"
+                onclick="return confirm('Apakah paket pesanan telah sampai dan Anda terima dengan baik?');"
+              >
+                <i data-lucide="check-check" class="lucide-sm"></i>
+                <span>Konfirmasi Pesanan Diterima</span>
+              </a>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- 2. Alur Status Timeline Stepper -->
+        {% set st = pesanan.status %}
+        {% set is_step1 = true %}
+        {% set is_step2 = st in ['diproses', 'dibayar', 'dikirim', 'selesai'] %}
+        {% set is_step3 = st in ['dikirim', 'selesai'] %}
+        {% set is_step4 = st == 'selesai' %}
+
+        <div class="stepper">
+          <!-- Garis Progress Hijau -->
+          <div
+            class="stepper-progress"
+            style="width: {% if is_step4 %}100%{% elif is_step3 %}66%{% elif is_step2 %}33%{% else %}0%{% endif %};"
+          ></div>
+
+          <!-- Step 1: Menunggu Pembayaran -->
+          <div class="step-item {% if is_step2 %}completed{% elif st == 'menunggu_pembayaran' %}active{% endif %}">
+            <div class="step-icon">
+              <i data-lucide="{% if is_step2 %}check{% else %}credit-card{% endif %}" class="lucide"></i>
+            </div>
+            <div class="step-label">Menunggu Pembayaran</div>
+          </div>
+
+          <!-- Step 2: Mempersiapkan Paket -->
+          <div class="step-item {% if is_step3 %}completed{% elif st in ['diproses', 'dibayar'] %}active{% endif %}">
+            <div class="step-icon">
+              <i data-lucide="{% if is_step3 %}check{% else %}package{% endif %}" class="lucide"></i>
+            </div>
+            <div class="step-label">Mempersiapkan Paket</div>
+          </div>
+
+          <!-- Step 3: Paket Dikirim -->
+          <div class="step-item {% if is_step4 %}completed{% elif st == 'dikirim' %}active{% endif %}">
+            <div class="step-icon">
+              <i data-lucide="{% if is_step4 %}check{% else %}truck{% endif %}" class="lucide"></i>
+            </div>
+            <div class="step-label">Paket Dikirim</div>
+          </div>
+
+          <!-- Step 4: Selesai -->
+          <div class="step-item {% if is_step4 %}completed active{% endif %}">
+            <div class="step-icon">
+              <i data-lucide="home" class="lucide"></i>
+            </div>
+            <div class="step-label">Pesanan Diterima</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. PETA INTERAKTIF LIVE MAPS TRACKING (Leaflet.js) -->
+      <section class="tracking-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--accent-emerald-light); color: var(--accent-emerald); display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="map" class="lucide"></i>
+            </div>
+            <div>
+              <h3 style="margin: 0; font-size: 16.5px; font-weight: 700; color: var(--text-main);">
+                Pelacak Pengiriman Real-Time (Live Map)
+              </h3>
+              <p style="margin: 2px 0 0; font-size: 12.5px; color: var(--text-muted);">
+                Memantau koordinat kurir ekspedisi dari Toko / Gudang ke Alamat Pelanggan.
+              </p>
+            </div>
+          </div>
+          <div style="font-size: 12px; font-weight: 600; padding: 4px 10px; background: var(--bg-subtle); border-radius: var(--radius-full); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 6px;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: {% if pesanan.status == 'dikirim' %}#10b981{% else %}#64748b{% endif %}; display: inline-block;"></span>
+            <span>GPS Tracking Aktif</span>
+          </div>
+        </div>
+
+        <!-- Wadah Leaflet Map -->
+        <div id="deliveryMap"></div>
+
+        <!-- Legenda Peta -->
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 14px; font-size: 12.5px; color: var(--text-muted);">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="width: 12px; height: 12px; background: #2563EB; border-radius: 50%; display: inline-block;"></span>
+            <span>Toko / Gudang Pengirim (Pusat)</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="width: 12px; height: 12px; background: #059669; border-radius: 50%; display: inline-block;"></span>
+            <span>Posisi Kurir Pengantar</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="width: 12px; height: 12px; background: #DC2626; border-radius: 50%; display: inline-block;"></span>
+            <span>Alamat Tujuan Pelanggan</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Rincian Barang & Data Pengiriman -->
+      <section class="info-grid">
+        <!-- Informasi Penerima & Pembayaran -->
+        <div class="tracking-card">
+          <h3 style="margin: 0 0 16px; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="map-pin" class="lucide-sm" style="color: var(--primary);"></i>
+            <span>Tujuan Pengiriman & Pembayaran</span>
+          </h3>
+          <div style="font-size: 13.5px; line-height: 1.6; color: var(--text-main);">
+            <div style="margin-bottom: 10px;">
+              <span style="color: var(--text-muted); font-size: 12px; display: block;">Penerima & Kontak:</span>
+              <strong>{{ pesanan.nama_pembeli }}</strong> &bull; {{ pesanan.telepon_pembeli or pesanan.no_hp or '-' }}
+            </div>
+            <div style="margin-bottom: 10px;">
+              <span style="color: var(--text-muted); font-size: 12px; display: block;">Alamat Pengiriman:</span>
+              <p style="margin: 0; background: var(--bg-subtle); padding: 10px 12px; border-radius: var(--radius-md); font-size: 13px;">
+                {{ pesanan.alamat_tujuan or pesanan.alamat_pengiriman or 'Alamat belum diatur' }}
+              </p>
+            </div>
+            <div>
+              <span style="color: var(--text-muted); font-size: 12px; display: block;">Metode Pembayaran:</span>
+              <span class="badge badge-info">{{ pesanan.metode_pembayaran or 'Transfer Bank' }}</span>
+            </div>
+
+            {% if pesanan.metode_pembayaran != 'COD' and pesanan.status != 'selesai' and pesanan.status != 'dibatalkan' %}
+              <div style="margin-top: 14px; padding: 12px 14px; border-radius: var(--radius-md); background: #ecfdf5; border: 1px solid #a7f3d0;">
+                <div style="font-weight: 700; color: #065f46; font-size: 13px; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                  <i data-lucide="message-circle" class="lucide-sm" style="color: #059669;"></i>
+                  <span>Konfirmasi Pembayaran WhatsApp</span>
+                </div>
+                <p style="margin: 0 0 10px; font-size: 12px; color: #047857; line-height: 1.4;">
+                  Sudah transfer atau bayar via E-Wallet/QRIS? Kirim bukti bayar langsung ke WhatsApp CS untuk mempercepat proses pesanan.
+                </p>
+                <a
+                  href="https://wa.me/6283152520566?text=Halo%20Admin%20Barokah%20E-Commerce,%20saya%20sudah%20melakukan%20pembayaran%20untuk%20Pesanan%20%23{{ pesanan.id }}%20atas%20nama%20{{ pesanan.nama_pembeli }}%20sebesar%20{{ pesanan.total_harga | rupiah }}.%20Berikut%20bukti%20transfernya."
+                  target="_blank"
+                  class="btn btn-emerald btn-sm"
+                  style="width: 100%; justify-content: center; text-decoration: none;"
+                >
+                  <i data-lucide="send" class="lucide-sm"></i>
+                  <span>Konfirmasi via WA (083152520566)</span>
+                </a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Rincian Produk -->
+        <div class="tracking-card">
+          <h3 style="margin: 0 0 16px; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="package" class="lucide-sm" style="color: var(--primary);"></i>
+            <span>Rincian Produk Dipesan</span>
+          </h3>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% for item in pesanan.rincian %}
+              <div style="display: flex; align-items: center; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border-subtle);">
+                <img
+                  src="/static/uploads/{{ item.gambar }}"
+                  alt="{{ item.nama_produk }}"
+                  style="width: 44px; height: 44px; object-fit: cover; border-radius: var(--radius-md); border: 1px solid var(--border-color);"
+                  onerror="this.onerror=null; this.src='/static/uploads/default.jpg';"
+                />
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-size: 13.5px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    {{ item.nama_produk }}
+                  </div>
+                  <div style="font-size: 12px; color: var(--text-muted);">
+                    {{ item.jumlah }} item x {{ item.harga_satuan | rupiah }}
+                  </div>
+                </div>
+                <div style="font-size: 13.5px; font-weight: 700; color: var(--text-main);">
+                  {{ item.subtotal | rupiah }}
+                </div>
+              </div>
+            {% endfor %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; font-size: 15px; font-weight: 700;">
+              <span>Total Pembayaran:</span>
+              <span style="color: var(--accent-emerald); font-size: 18px;">{{ pesanan.total_harga | rupiah }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Script Leaflet.js Interactive Maps -->
+    <script>
+      // Koordinat Gudang Toko
+      const warehouseCoords = [-6.175392, 106.827153];
+      // Koordinat Kurir dari DB
+      const courierCoords = [
+        {{ pesanan.kurir_lat or -6.175392 }},
+        {{ pesanan.kurir_lng or 106.827153 }}
+      ];
+      // Koordinat Tujuan Pelanggan dari DB
+      const destinationCoords = [
+        {{ pesanan.tujuan_lat or -6.208763 }},
+        {{ pesanan.tujuan_lng or 106.845599 }}
+      ];
+
+      // Inisialisasi Peta Leaflet
+      const map = L.map('deliveryMap').setView(courierCoords, 13);
+
+      // Tile Layer OpenStreetMap
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+      }).addTo(map);
+
+      // Icon Markers dengan SVG Modern
+      const warehouseIcon = L.divIcon({
+        className: 'custom-pin pin-warehouse',
+        html: '<div style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/></svg></div>',
+        iconSize: [34, 34],
+        iconAnchor: [17, 17]
+      });
+
+      const courierIcon = L.divIcon({
+        className: 'custom-pin pin-courier',
+        html: '<div style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18.5" r="2.5"/><circle cx="7" cy="18.5" r="2.5"/></svg></div>',
+        iconSize: [38, 38],
+        iconAnchor: [19, 19]
+      });
+
+      const destIcon = L.divIcon({
+        className: 'custom-pin pin-destination',
+        html: '<div style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>',
+        iconSize: [34, 34],
+        iconAnchor: [17, 17]
+      });
+
+      // Tambahkan Marker ke Peta
+      const mWarehouse = L.marker(warehouseCoords, { icon: warehouseIcon }).addTo(map)
+        .bindPopup('<b>Gudang Toko Barokah E-Commerce</b><br>Paket diberangkatkan dari sini.');
+
+      const mCourier = L.marker(courierCoords, { icon: courierIcon }).addTo(map)
+        .bindPopup('<b>Kurir Ekspedisi</b><br>Status: {{ pesanan.status | upper }}');
+
+      const mDest = L.marker(destinationCoords, { icon: destIcon }).addTo(map)
+        .bindPopup('<b>Alamat Penerima</b><br>{{ pesanan.nama_pembeli }}');
+
+      // Polyline Jalur Perjalanan
+      // Jalur yang sudah dilewati (Toko -> Kurir)
+      const traveledLine = L.polyline([warehouseCoords, courierCoords], {
+        color: '#059669',
+        weight: 5,
+        opacity: 0.85
+      }).addTo(map);
+
+      // Jalur yang belum dilewati (Kurir -> Pelanggan)
+      const remainingLine = L.polyline([courierCoords, destinationCoords], {
+        color: '#94A3B8',
+        weight: 4,
+        dashArray: '6, 8',
+        opacity: 0.75
+      }).addTo(map);
+
+      // Fit Bounds agar semua pin terlihat jelas di layar
+      const group = new L.featureGroup([mWarehouse, mCourier, mDest]);
+      map.fitBounds(group.getBounds().pad(0.15));
+
+      // Dark Mode Toggle Logic
+      function toggleDarkMode() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+          document.documentElement.removeAttribute('data-theme');
+          localStorage.setItem('theme', 'light');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          localStorage.setItem('theme', 'dark');
+        }
+        if (window.lucide) lucide.createIcons();
+      }
+
+      // Lucide Icons
+      lucide.createIcons();
+    </script>
+  </body>
+</html>
+

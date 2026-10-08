@@ -1,0 +1,1106 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Checkout Pesanan - Barokah E-Commerce</title>
+    <!-- Dark Mode Init Script -->
+    <script>(function(){if(localStorage.getItem('theme')==='dark'||(!localStorage.getItem('theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.setAttribute('data-theme','dark');})();</script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Leaflet.js Interactive Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Core Design Tokens Stylesheet -->
+    <link rel="stylesheet" href="/static/css/style.css" />
+
+    <style>
+      .checkout-navbar {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border-color);
+        padding: 14px 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: var(--shadow-xs);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        color: var(--text-main);
+      }
+      .brand-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius-md);
+        background: var(--primary-light);
+        color: var(--primary);
+      }
+      .brand h1 {
+        margin: 0;
+        font-size: 19px;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+      .checkout-layout {
+        max-width: 1160px;
+        margin: 32px auto;
+        padding: 0 24px;
+        display: grid;
+        grid-template-columns: 1fr 390px;
+        gap: 32px;
+        align-items: start;
+      }
+      @media (max-width: 900px) {
+        .checkout-layout {
+          grid-template-columns: 1fr;
+        }
+      }
+      .checkout-section {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-xl);
+        padding: 24px 28px;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 24px;
+      }
+      .section-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 20px;
+      }
+      .section-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius-md);
+        background: var(--primary-light);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .section-title {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+
+      /* Payment Grouping & Interactive Cards */
+      .payment-options-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+      @media (max-width: 640px) {
+        .payment-options-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .pay-option-card {
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 16px 18px;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        background: var(--bg-surface);
+        position: relative;
+      }
+      .pay-option-card:hover {
+        border-color: var(--primary);
+        background: #f8fbff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+      }
+      .pay-option-card.active {
+        border-color: var(--accent-emerald);
+        background: #f0fdf4;
+        box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2);
+      }
+      .pay-option-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: var(--radius-md);
+        background: var(--bg-subtle);
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.2s;
+      }
+      .pay-option-card:hover .pay-option-icon {
+        background: var(--primary-light);
+        color: var(--primary);
+      }
+      .pay-option-card.active .pay-option-icon {
+        background: #d1fae5;
+        color: var(--accent-emerald);
+      }
+      .pay-option-content {
+        flex: 1;
+        min-width: 0;
+      }
+      .pay-option-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 3px;
+      }
+      .pay-option-card.active .pay-option-title {
+        color: #065f46;
+      }
+      .pay-option-desc {
+        font-size: 12.5px;
+        color: var(--text-muted);
+        line-height: 1.4;
+      }
+      .pay-option-badge {
+        display: inline-block;
+        margin-top: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+        background: var(--bg-subtle);
+        color: var(--text-muted);
+      }
+      .pay-option-card.active .pay-option-badge {
+        background: #a7f3d0;
+        color: #065f46;
+      }
+      .pay-check-indicator {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 2px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: transparent;
+        transition: all 0.2s;
+        flex-shrink: 0;
+      }
+      .pay-option-card.active .pay-check-indicator {
+        background: var(--accent-emerald);
+        border-color: var(--accent-emerald);
+        color: #ffffff;
+      }
+
+      /* Payment Details Box */
+      .payment-details-box {
+        background: #ffffff;
+        border: 1.5px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 22px 24px;
+        margin-top: 18px;
+        transition: all 0.3s ease;
+      }
+      .payment-details-box.active {
+        border-color: var(--accent-emerald);
+        box-shadow: 0 4px 16px rgba(5, 150, 105, 0.08);
+      }
+      .pay-detail-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 16px;
+      }
+      .pay-detail-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .highlight-box {
+        background: #f8fafc;
+        border: 1.5px dashed #cbd5e1;
+        border-radius: var(--radius-md);
+        padding: 16px 20px;
+        margin-bottom: 16px;
+      }
+      .highlight-account-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .highlight-number {
+        font-family: 'SF Mono', Monaco, Inconsolata, 'Fira Code', monospace;
+        font-size: 22px;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: 0.06em;
+      }
+      .btn-copy-code {
+        background: #ffffff;
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+        color: var(--primary);
+        font-size: 12.5px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: var(--radius-md);
+        transition: all 0.15s ease;
+        box-shadow: var(--shadow-xs);
+      }
+      .btn-copy-code:hover {
+        background: #f1f5f9;
+        border-color: var(--primary);
+      }
+      .qris-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 16px;
+        background: #f8fafc;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        margin-bottom: 16px;
+      }
+      .qris-img {
+        max-width: 240px;
+        width: 100%;
+        height: auto;
+        border-radius: var(--radius-md);
+        border: 2px solid #e2e8f0;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+        background: #ffffff;
+        padding: 8px;
+      }
+      .step-list {
+        margin: 0;
+        padding-left: 20px;
+        font-size: 13px;
+        color: var(--text-muted);
+        line-height: 1.6;
+      }
+      .step-list li {
+        margin-bottom: 4px;
+      }
+
+      /* Alert Selection Status */
+      .selection-alert {
+        padding: 14px 18px;
+        border-radius: var(--radius-md);
+        font-size: 13.5px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 18px;
+        transition: all 0.25s ease;
+      }
+      .selection-alert.unselected {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        color: #b45309;
+      }
+      .selection-alert.selected {
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        color: #047857;
+      }
+
+      /* Summary Sidebar */
+      .summary-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-xl);
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
+        position: sticky;
+        top: 84px;
+      }
+      .item-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .item-img {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--radius-md);
+        object-fit: cover;
+        border: 1px solid var(--border-color);
+        background: var(--bg-subtle);
+      }
+      .item-details {
+        flex: 1;
+        min-width: 0;
+      }
+      .item-name {
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--text-main);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .item-meta {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+      .item-price {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--text-main);
+        white-space: nowrap;
+      }
+      .summary-breakdown {
+        margin: 16px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .summary-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13.5px;
+        color: var(--text-muted);
+      }
+      .summary-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding-top: 14px;
+        border-top: 1.5px dashed var(--border-color);
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+      .total-amount {
+        font-size: 21px;
+        font-weight: 800;
+        color: var(--accent-emerald);
+      }
+      .btn-submit-order {
+        width: 100%;
+        padding: 14px;
+        font-size: 15.5px;
+        font-weight: 700;
+        justify-content: center;
+        margin-top: 16px;
+        border-radius: var(--radius-md);
+        transition: all 0.2s ease;
+      }
+      .btn-submit-order.disabled {
+        background: #e2e8f0;
+        color: #94a3b8;
+        border-color: #cbd5e1;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+      .badge-secure {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 14px;
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navbar -->
+    <header class="checkout-navbar">
+      <a href="/" class="brand">
+        <img src="/static/images/logo.png" alt="Barokah E-Commerce" class="brand-logo-img" />
+        <h1>Barokah E-Commerce</h1>
+      </a>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button type="button" class="btn-theme-toggle" onclick="toggleDarkMode()" title="Ubah Tema Gelap/Terang">
+          <i data-lucide="moon" class="lucide-sm"></i>
+        </button>
+        <a href="/keranjang" class="btn btn-secondary btn-sm">
+          <i data-lucide="arrow-left" class="lucide-sm"></i>
+          <span>Kembali ke Keranjang</span>
+        </a>
+        <a href="/profil" class="nav-user-profile-link" title="Profil Akun ({{ session.get('nama', 'User') }})">
+          {% if user_foto %}
+            <img src="/static/uploads/{{ user_foto }}" alt="Foto Profil" class="nav-user-avatar-img">
+          {% else %}
+            <img src="/static/images/default_avatar.svg" alt="Default Avatar" class="nav-user-avatar-img">
+          {% endif %}
+          <span style="font-size: 13.5px; font-weight: 600;">{{ (session.get('nama', 'Akun') or 'Akun').split(' ')[0] }}</span>
+        </a>
+      </div>
+    </header>
+
+    <div class="checkout-layout">
+      <!-- Form Input Checkout Utama -->
+      <form action="/checkout" method="POST" id="checkoutForm" onsubmit="return handleFormSubmit(event)">
+        <!-- Flash Notification Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-container" style="margin-bottom: 20px;">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                  <i data-lucide="{% if category == 'success' %}check-circle{% elif category == 'danger' %}alert-circle{% else %}info{% endif %}"></i>
+                  <span>{{ message }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- 1. Alamat & Kontak Pengiriman (Auto-fill) -->
+        <section class="checkout-section">
+          <div class="section-header">
+            <div class="section-icon">
+              <i data-lucide="map-pin" class="lucide"></i>
+            </div>
+            <div>
+              <h2 class="section-title">Alamat & Kontak Pengiriman</h2>
+              <p style="margin: 2px 0 0; font-size: 12.5px; color: var(--text-muted);">
+                Data otomatis terisi dari akun profil Anda. Pastikan detail alamat lengkap dan akurat.
+              </p>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label class="form-label" for="nama_penerima">
+                <span>Nama Penerima</span>
+                <span style="color: var(--accent-rose);">*</span>
+              </label>
+              <div class="input-with-icon">
+                <i data-lucide="user" class="input-icon"></i>
+                <input
+                  type="text"
+                  id="nama_penerima"
+                  name="nama_penerima"
+                  class="form-control"
+                  value="{{ user.nama or '' }}"
+                  required
+                  placeholder="Nama lengkap penerima"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="no_hp">
+                <span>Nomor WhatsApp / HP</span>
+                <span style="color: var(--accent-rose);">*</span>
+              </label>
+              <div class="input-with-icon">
+                <i data-lucide="phone" class="input-icon"></i>
+                <input
+                  type="text"
+                  id="no_hp"
+                  name="no_hp"
+                  class="form-control"
+                  value="{{ user.no_hp or '' }}"
+                  required
+                  placeholder="Contoh: 081234567890"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 14px;">
+            <label class="form-label" for="alamat_pengiriman">
+              <span>Alamat Lengkap Pengiriman</span>
+              <span style="color: var(--accent-rose);">*</span>
+            </label>
+            <textarea
+              id="alamat_pengiriman"
+              name="alamat_pengiriman"
+              class="form-control"
+              rows="3"
+              required
+              placeholder="Nama Jalan, Blok/No. Rumah, RT/RW, Kelurahan, Kecamatan, Kota/Kabupaten, Kode Pos"
+            >{{ user.alamat or '' }}</textarea>
+          </div>
+
+          <!-- Titik Lokasi Pin Maps / Location Picker -->
+          <div class="form-group" style="margin-top: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label class="form-label" style="margin-bottom: 0;">
+                <i data-lucide="map-pin" class="lucide-sm" style="color: var(--primary); vertical-align: middle;"></i>
+                <span>Titik Presisi Lokasi Antar (Pin Maps)</span>
+                <span style="font-size: 11.5px; color: var(--text-muted);">(Geser pin atau klik peta)</span>
+              </label>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnGpsCheckout" onclick="getCurrentCheckoutLocation()" style="font-size: 12px; padding: 4px 10px;">
+                <i data-lucide="crosshair" class="lucide-sm"></i>
+                <span>Deteksi Lokasi GPS</span>
+              </button>
+            </div>
+            <div id="checkoutMap" style="height: 250px; width: 100%; border-radius: var(--radius-lg); border: 1px solid var(--border-color); z-index: 1;"></div>
+            <input type="hidden" id="latitude" name="latitude" value="{{ user.latitude or '' }}">
+            <input type="hidden" id="longitude" name="longitude" value="{{ user.longitude or '' }}">
+            <div style="display: flex; gap: 16px; margin-top: 8px; font-size: 12px; color: var(--text-muted);">
+              <span>Latitude: <strong id="latText" style="color: var(--text-main);">{{ user.latitude or '-6.208763' }}</strong></span>
+              <span>Longitude: <strong id="lngText" style="color: var(--text-main);">{{ user.longitude or '106.845599' }}</strong></span>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 14px;">
+            <label class="form-label" for="catatan">Catatan untuk Kurir (Opsional)</label>
+            <input
+              type="text"
+              id="catatan"
+              name="catatan"
+              class="form-control"
+              placeholder="Contoh: Titipkan di pos satpam jika sedang keluar rumah"
+            />
+          </div>
+        </section>
+
+        <!-- 2. PILIHAN METODE PEMBAYARAN LENGKAP & INTERAKTIF -->
+        <section class="checkout-section" id="paymentSection">
+          <div class="section-header">
+            <div class="section-icon">
+              <i data-lucide="credit-card" class="lucide"></i>
+            </div>
+            <div>
+              <h2 class="section-title">Pilih Metode Pembayaran</h2>
+              <p style="margin: 2px 0 0; font-size: 12.5px; color: var(--text-muted);">
+                Wajib memilih salah satu opsi pembayaran di bawah ini sebelum membuat pesanan.
+              </p>
+            </div>
+          </div>
+
+          <!-- Hidden Input untuk Nilai Metode yang Dipilih -->
+          <input type="hidden" name="metode_pembayaran" id="selectedPaymentInput" value="" required />
+
+          <!-- Grid 4 Pilihan Metode Pembayaran Interaktif -->
+          <div class="payment-options-grid">
+            <!-- 1. Transfer Bank -->
+            <div class="pay-option-card" id="card-transfer" onclick="choosePaymentMethod('Transfer Bank')">
+              <div class="pay-option-icon">
+                <i data-lucide="landmark"></i>
+              </div>
+              <div class="pay-option-content">
+                <div class="pay-option-title">
+                  <span>Transfer Bank</span>
+                  <div class="pay-check-indicator"><i data-lucide="check" class="lucide-sm"></i></div>
+                </div>
+                <div class="pay-option-desc">BCA, Mandiri, BRI, BNI & Bank Lainnya</div>
+                <span class="pay-option-badge">Rek: 051-25707057</span>
+              </div>
+            </div>
+
+            <!-- 2. E-Wallet -->
+            <div class="pay-option-card" id="card-ewallet" onclick="choosePaymentMethod('E-Wallet')">
+              <div class="pay-option-icon">
+                <i data-lucide="smartphone"></i>
+              </div>
+              <div class="pay-option-content">
+                <div class="pay-option-title">
+                  <span>E-Wallet</span>
+                  <div class="pay-check-indicator"><i data-lucide="check" class="lucide-sm"></i></div>
+                </div>
+                <div class="pay-option-desc">GoPay, OVO, DANA, ShopeePay</div>
+                <span class="pay-option-badge">No: 088888888888</span>
+              </div>
+            </div>
+
+            <!-- 3. QRIS Instant -->
+            <div class="pay-option-card" id="card-qris" onclick="choosePaymentMethod('QRIS')">
+              <div class="pay-option-icon">
+                <i data-lucide="qr-code"></i>
+              </div>
+              <div class="pay-option-content">
+                <div class="pay-option-title">
+                  <span>QRIS Instant</span>
+                  <div class="pay-check-indicator"><i data-lucide="check" class="lucide-sm"></i></div>
+                </div>
+                <div class="pay-option-desc">Scan via Semua Bank & E-Wallet</div>
+                <span class="pay-option-badge">Bebas Biaya Admin</span>
+              </div>
+            </div>
+
+            <!-- 4. COD -->
+            <div class="pay-option-card" id="card-cod" onclick="choosePaymentMethod('COD (Bayar di Tempat)')">
+              <div class="pay-option-icon">
+                <i data-lucide="truck"></i>
+              </div>
+              <div class="pay-option-content">
+                <div class="pay-option-title">
+                  <span>COD (Bayar di Tempat)</span>
+                  <div class="pay-check-indicator"><i data-lucide="check" class="lucide-sm"></i></div>
+                </div>
+                <div class="pay-option-desc">Bayar tunai langsung saat barang tiba</div>
+                <span class="pay-option-badge">Bayar Tunai</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Placeholder saat belum ada metode yang dipilih -->
+          <div id="paymentUnselectedPrompt" class="selection-alert unselected">
+            <i data-lucide="alert-circle" class="lucide-sm"></i>
+            <span>Silakan klik salah satu opsi pembayaran di atas untuk melihat rincian pembayaran dan menyelesaikan pesanan.</span>
+          </div>
+
+          <!-- Dynamic Container Detail Pembayaran Sesuai Opsi Dipilih -->
+          <div id="paymentDetailsContainer" class="payment-details-box" style="display: none;">
+            <!-- Konten diisi secara dinamis lewat JavaScript -->
+          </div>
+        </section>
+      </form>
+
+      <!-- Ringkasan Belanja Sticky Sidebar -->
+      <aside class="summary-card">
+        <h3 style="font-size: 16px; font-weight: 700; margin: 0 0 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="shopping-bag" class="lucide-sm" style="color: var(--primary);"></i>
+          <span>Ringkasan Belanja</span>
+        </h3>
+
+        <!-- Daftar Barang -->
+        <div style="max-height: 220px; overflow-y: auto; padding-right: 4px;">
+          {% for item in items %}
+            <div class="item-row">
+              <img
+                src="/static/uploads/{{ item.gambar }}"
+                class="item-img"
+                alt="{{ item.nama_produk }}"
+                onerror="this.onerror=null; this.src='/static/uploads/default.jpg';"
+              />
+              <div class="item-details">
+                <div class="item-name" title="{{ item.nama_produk }}">{{ item.nama_produk }}</div>
+                <div class="item-meta">{{ item.jumlah }} x {{ item.harga_satuan | rupiah }}</div>
+              </div>
+              <div class="item-price">{{ item.subtotal | rupiah }}</div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="summary-breakdown">
+          <div class="summary-row">
+            <span>Subtotal Produk</span>
+            <span style="font-weight: 600; color: var(--text-main);">{{ total | rupiah }}</span>
+          </div>
+          <div class="summary-row">
+            <span>Biaya Pengiriman</span>
+            <span style="font-weight: 600; color: var(--accent-emerald);">GRATIS (Promo)</span>
+          </div>
+          <div class="summary-row">
+            <span>Metode Dipilih</span>
+            <span id="summarySelectedMethod" style="font-weight: 700; color: var(--primary);">Belum Dipilih</span>
+          </div>
+          <div class="summary-total">
+            <span>Total Tagihan</span>
+            <span class="total-amount">{{ total | rupiah }}</span>
+          </div>
+        </div>
+
+        <!-- Tombol Konfirmasi Pesanan -->
+        <button
+          type="button"
+          id="btnSubmitCheckout"
+          onclick="triggerCheckoutSubmit()"
+          class="btn btn-emerald btn-submit-order disabled"
+          disabled
+        >
+          <i data-lucide="lock" class="lucide-sm" id="btnSubmitIcon"></i>
+          <span id="btnSubmitText">Pilih Metode Pembayaran</span>
+        </button>
+
+        <div class="badge-secure">
+          <i data-lucide="shield-check" class="lucide-sm" style="color: var(--accent-emerald);"></i>
+          <span>Transaksi 100% Aman & Terverifikasi</span>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Script Interaktif Metode Pembayaran & Salin Kode -->
+    <script>
+      let currentSelectedMethod = '';
+
+      const paymentTemplates = {
+        'Transfer Bank': `
+          <div class="pay-detail-header">
+            <div class="pay-detail-title">
+              <i data-lucide="landmark" class="lucide-sm" style="color: var(--primary);"></i>
+              <span>Instruksi Pembayaran: Transfer Bank</span>
+            </div>
+            <span class="pay-option-badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700;">BCA &bull; Mandiri &bull; BRI &bull; BNI</span>
+          </div>
+
+          <div class="highlight-box">
+            <div style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">Nomor Rekening Tujuan:</div>
+            <div class="highlight-account-row">
+              <div>
+                <div class="highlight-number">051-25707057</div>
+                <div style="font-size: 13px; color: var(--text-main); margin-top: 4px;">
+                  <strong>Atas Nama:</strong> Toko Barokah E-Commerce &bull; <strong>Bank:</strong> BCA / Bank Lainnya
+                </div>
+              </div>
+              <button type="button" class="btn-copy-code" onclick="copyCode(event, '05125707057')">
+                <i data-lucide="copy" class="lucide-sm"></i>
+                <span>Salin No. Rekening</span>
+              </button>
+            </div>
+          </div>
+
+          <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+            <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Langkah Pembayaran:</div>
+            <ol class="step-list">
+              <li>Salin nomor rekening tujuan <strong>051-25707057</strong> di atas.</li>
+              <li>Buka aplikasi m-Banking (BCA, Mandiri, BRI, BNI) atau kunjungi ATM terdekat.</li>
+              <li>Transfer nominal tepat sesuai total tagihan: <strong style="color: var(--accent-emerald);">{{ total | rupiah }}</strong>.</li>
+              <li>Setelah transfer berhasil, klik tombol <strong>"Konfirmasi & Buat Pesanan"</strong> di samping.</li>
+            </ol>
+          </div>
+
+          <div style="margin-top: 14px; padding: 12px 14px; background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="message-circle" class="lucide-sm" style="color: #059669;"></i>
+              <span style="font-size: 12.5px; color: #065f46; font-weight: 600;">Konfirmasi Pembayaran Transfer Bank:</span>
+            </div>
+            <a
+              href="https://wa.me/6283152520566?text=Halo%20Admin%20Barokah%20E-Commerce%2C%20saya%20ingin%20konfirmasi%20pembayaran%20pesanan%20sebesar%20Rp%20{{ total | int }}%20via%20Transfer%20Bank.%20Nama%3A%20{{ user.nama }}."
+              target="_blank"
+              class="btn btn-emerald btn-sm"
+              style="padding: 6px 12px; font-size: 12px; text-decoration: none;"
+            >
+              <i data-lucide="message-circle" class="lucide-sm"></i>
+              <span>Konfirmasi via WhatsApp</span>
+            </a>
+          </div>
+        `,
+        'E-Wallet': `
+          <div class="pay-detail-header">
+            <div class="pay-detail-title">
+              <i data-lucide="smartphone" class="lucide-sm" style="color: var(--primary);"></i>
+              <span>Instruksi Pembayaran: E-Wallet</span>
+            </div>
+            <span class="pay-option-badge" style="background: #e0e7ff; color: #4338ca; font-weight: 700;">GoPay &bull; OVO &bull; DANA &bull; ShopeePay</span>
+          </div>
+
+          <div class="highlight-box">
+            <div style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">Nomor HP / Akun E-Wallet:</div>
+            <div class="highlight-account-row">
+              <div>
+                <div class="highlight-number">088888888888</div>
+                <div style="font-size: 13px; color: var(--text-main); margin-top: 4px;">
+                  <strong>Atas Nama:</strong> Toko Barokah E-Commerce &bull; <strong>Layanan:</strong> GoPay / OVO / DANA / ShopeePay
+                </div>
+              </div>
+              <button type="button" class="btn-copy-code" onclick="copyCode(event, '088888888888')">
+                <i data-lucide="copy" class="lucide-sm"></i>
+                <span>Salin No. HP / E-Wallet</span>
+              </button>
+            </div>
+          </div>
+
+          <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+            <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Langkah Pembayaran:</div>
+            <ol class="step-list">
+              <li>Buka aplikasi dompet digital favorit Anda (GoPay, OVO, DANA, atau ShopeePay).</li>
+              <li>Pilih menu Kirim / Transfer Saldo ke nomor <strong>088888888888</strong>.</li>
+              <li>Kirim nominal tepat sesuai total tagihan: <strong style="color: var(--accent-emerald);">{{ total | rupiah }}</strong>.</li>
+              <li>Selesaikan pengiriman saldo, lalu klik tombol <strong>"Konfirmasi & Buat Pesanan"</strong> di samping.</li>
+            </ol>
+          </div>
+
+          <div style="margin-top: 14px; padding: 12px 14px; background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="message-circle" class="lucide-sm" style="color: #059669;"></i>
+              <span style="font-size: 12.5px; color: #065f46; font-weight: 600;">Konfirmasi Pembayaran E-Wallet:</span>
+            </div>
+            <a
+              href="https://wa.me/6283152520566?text=Halo%20Admin%20Barokah%20E-Commerce%2C%20saya%20ingin%20konfirmasi%20pembayaran%20pesanan%20sebesar%20Rp%20{{ total | int }}%20via%20E-Wallet.%20Nama%3A%20{{ user.nama }}."
+              target="_blank"
+              class="btn btn-emerald btn-sm"
+              style="padding: 6px 12px; font-size: 12px; text-decoration: none;"
+            >
+              <i data-lucide="message-circle" class="lucide-sm"></i>
+              <span>Konfirmasi via WhatsApp</span>
+            </a>
+          </div>
+        `,
+        'QRIS': `
+          <div class="pay-detail-header">
+            <div class="pay-detail-title">
+              <i data-lucide="qr-code" class="lucide-sm" style="color: var(--primary);"></i>
+              <span>Instruksi Pembayaran: QRIS Instant Pay</span>
+            </div>
+            <span class="pay-option-badge" style="background: #fef3c7; color: #b45309; font-weight: 700;">Scan Bebas Biaya Admin</span>
+          </div>
+
+          <div class="qris-container">
+            <img src="/static/images/qris.jpg" alt="QRIS Toko Barokah E-Commerce" class="qris-img" />
+            <div style="margin-top: 12px; font-weight: 700; font-size: 15px; color: var(--text-main);">NOTHING COMPUTER (BNJRMSN)</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">NMID: ID1024361596541 &bull; Toko Barokah E-Commerce Official</div>
+            <div style="margin-top: 8px; font-size: 14px; font-weight: 700; color: var(--accent-emerald);">Total Tagihan: {{ total | rupiah }}</div>
+            <div style="margin-top: 6px; font-size: 11.5px; color: var(--text-muted);">
+              Mendukung: BCA Mobile, Livin Mandiri, BRImo, BNI Mobile, GoPay, OVO, DANA, ShopeePay & aplikasi QRIS lainnya.
+            </div>
+          </div>
+
+          <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+            <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Langkah Pembayaran:</div>
+            <ol class="step-list">
+              <li>Buka aplikasi m-Banking atau E-Wallet apa saja di smartphone Anda.</li>
+              <li>Buka menu <strong>Scan QR / QRIS</strong>.</li>
+              <li>Arahkan kamera ke gambar kode QR di atas (atau simpan kode QR ini).</li>
+              <li>Periksa nominal tagihan <strong style="color: var(--accent-emerald);">{{ total | rupiah }}</strong> dan selesaikan pembayaran.</li>
+              <li>Klik tombol <strong>"Konfirmasi & Buat Pesanan"</strong> di samping setelah pembayaran berhasil.</li>
+            </ol>
+          </div>
+
+          <div style="margin-top: 14px; padding: 12px 14px; background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="message-circle" class="lucide-sm" style="color: #059669;"></i>
+              <span style="font-size: 12.5px; color: #065f46; font-weight: 600;">Konfirmasi Pembayaran QRIS:</span>
+            </div>
+            <a
+              href="https://wa.me/6283152520566?text=Halo%20Admin%20Barokah%20E-Commerce%2C%20saya%20ingin%20konfirmasi%20pembayaran%20pesanan%20sebesar%20Rp%20{{ total | int }}%20via%20QRIS.%20Nama%3A%20{{ user.nama }}."
+              target="_blank"
+              class="btn btn-emerald btn-sm"
+              style="padding: 6px 12px; font-size: 12px; text-decoration: none;"
+            >
+              <i data-lucide="message-circle" class="lucide-sm"></i>
+              <span>Konfirmasi via WhatsApp</span>
+            </a>
+          </div>
+        `,
+        'COD (Bayar di Tempat)': `
+          <div class="pay-detail-header">
+            <div class="pay-detail-title">
+              <i data-lucide="truck" class="lucide-sm" style="color: var(--primary);"></i>
+              <span>Instruksi Pembayaran: Cash on Delivery (COD)</span>
+            </div>
+            <span class="pay-option-badge" style="background: #ecfdf5; color: #047857; font-weight: 700;">Bayar Saat Barang Tiba</span>
+          </div>
+
+          <div class="highlight-box" style="background: #f0fdf4; border-color: #86efac;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+              <i data-lucide="check-circle-2" style="color: var(--accent-emerald); width: 22px; height: 22px;"></i>
+              <div style="font-weight: 700; font-size: 14.5px; color: #065f46;">Pesanan Segera Diproses Toko</div>
+            </div>
+            <div style="font-size: 13.5px; color: #166534; line-height: 1.5;">
+              Anda tidak perlu melakukan pembayaran sekarang. Paket pesanan Anda akan langsung dipersiapkan dan diantar oleh kurir ke alamat pengiriman Anda.
+            </div>
+            <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed #bbf7d0; display: flex; justify-content: space-between; align-items: baseline;">
+              <span style="font-size: 13px; color: #166534;">Total Tunai yang Harus Disiapkan:</span>
+              <span style="font-size: 18px; font-weight: 800; color: #065f46;">{{ total | rupiah }}</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+            <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Langkah Selanjutnya:</div>
+            <ol class="step-list">
+              <li>Pastikan Nomor WhatsApp / HP penerima aktif agar kurir dapat menghubungi saat pengantaran.</li>
+              <li>Siapkan uang tunai pas sebesar <strong style="color: var(--accent-emerald);">{{ total | rupiah }}</strong> saat barang tiba.</li>
+              <li>Klik tombol <strong>"Konfirmasi & Buat Pesanan"</strong> di samping untuk menyelesaikan order.</li>
+            </ol>
+          </div>
+        `
+      };
+
+      function choosePaymentMethod(methodName) {
+        currentSelectedMethod = methodName;
+
+        // Set hidden input value
+        document.getElementById('selectedPaymentInput').value = methodName;
+
+        // Update active class on cards
+        document.querySelectorAll('.pay-option-card').forEach(card => card.classList.remove('active'));
+        
+        let targetId = '';
+        if (methodName === 'Transfer Bank') targetId = 'card-transfer';
+        else if (methodName === 'E-Wallet') targetId = 'card-ewallet';
+        else if (methodName === 'QRIS') targetId = 'card-qris';
+        else if (methodName.includes('COD')) targetId = 'card-cod';
+
+        if (targetId) {
+          const cardEl = document.getElementById(targetId);
+          if (cardEl) cardEl.classList.add('active');
+        }
+
+        // Hide unselected prompt, show dynamic details
+        const promptEl = document.getElementById('paymentUnselectedPrompt');
+        if (promptEl) promptEl.style.display = 'none';
+
+        const detailContainer = document.getElementById('paymentDetailsContainer');
+        if (detailContainer && paymentTemplates[methodName]) {
+          detailContainer.innerHTML = paymentTemplates[methodName];
+          detailContainer.style.display = 'block';
+          detailContainer.classList.add('active');
+        }
+
+        // Update Summary Card
+        const summaryMethod = document.getElementById('summarySelectedMethod');
+        if (summaryMethod) summaryMethod.textContent = methodName;
+
+        // Enable Submit Button
+        const btn = document.getElementById('btnSubmitCheckout');
+        if (btn) {
+          btn.removeAttribute('disabled');
+          btn.classList.remove('disabled');
+          document.getElementById('btnSubmitText').textContent = 'Konfirmasi & Buat Pesanan';
+          document.getElementById('btnSubmitIcon').setAttribute('data-lucide', 'check-circle');
+        }
+
+        lucide.createIcons();
+      }
+
+      function copyCode(e, codeText) {
+        e.stopPropagation();
+        navigator.clipboard.writeText(codeText).then(() => {
+          const target = e.currentTarget;
+          const oldHtml = target.innerHTML;
+          target.innerHTML = '<i data-lucide="check" class="lucide-sm"></i> Tersalin!';
+          lucide.createIcons();
+          setTimeout(() => {
+            target.innerHTML = oldHtml;
+            lucide.createIcons();
+          }, 2000);
+        }).catch(() => {
+          // Fallback if clipboard API permission denied
+          prompt('Salin nomor berikut:', codeText);
+        });
+      }
+
+      function triggerCheckoutSubmit() {
+        if (!currentSelectedMethod) {
+          alert('Mohon pilih salah satu metode pembayaran terlebih dahulu sebelum melanjutkan!');
+          const sec = document.getElementById('paymentSection');
+          sec.scrollIntoView({ behavior: 'smooth' });
+          sec.style.outline = '2px solid var(--accent-rose)';
+          setTimeout(() => sec.style.outline = '', 2500);
+          return;
+        }
+
+        const form = document.getElementById('checkoutForm');
+        if (form.reportValidity()) {
+          form.submit();
+        }
+      }
+
+      function handleFormSubmit(e) {
+        if (!currentSelectedMethod) {
+          e.preventDefault();
+          alert('Mohon pilih salah satu metode pembayaran terlebih dahulu!');
+          const sec = document.getElementById('paymentSection');
+          sec.scrollIntoView({ behavior: 'smooth' });
+          sec.style.outline = '2px solid var(--accent-rose)';
+          setTimeout(() => sec.style.outline = '', 2500);
+          return false;
+        }
+        return true;
+      }
+
+      function toggleDarkMode() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+          document.documentElement.removeAttribute('data-theme');
+          localStorage.setItem('theme', 'light');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          localStorage.setItem('theme', 'dark');
+        }
+        if (window.lucide) lucide.createIcons();
+      }
+
+      // Initialize Lucide Icons
+      lucide.createIcons();
+
+      // Inisialisasi Peta Lokasi Checkout Leaflet
+      document.addEventListener('DOMContentLoaded', function() {
+        const defaultLat = {{ user.latitude if user.latitude else -6.208763 }};
+        const defaultLng = {{ user.longitude if user.longitude else 106.845599 }};
+
+        const map = L.map('checkoutMap').setView([defaultLat, defaultLng], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        const marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
+
+        function updateCoords(lat, lng) {
+          const latVal = lat.toFixed(6);
+          const lngVal = lng.toFixed(6);
+          document.getElementById('latitude').value = latVal;
+          document.getElementById('longitude').value = lngVal;
+          document.getElementById('latText').textContent = latVal;
+          document.getElementById('lngText').textContent = lngVal;
+        }
+
+        if (!document.getElementById('latitude').value) {
+          updateCoords(defaultLat, defaultLng);
+        }
+
+        marker.on('dragend', function(e) {
+          const pos = e.target.getLatLng();
+          updateCoords(pos.lat, pos.lng);
+        });
+
+        map.on('click', function(e) {
+          marker.setLatLng(e.latlng);
+          updateCoords(e.latlng.lat, e.latlng.lng);
+        });
+
+        window.getCurrentCheckoutLocation = function() {
+          if (!navigator.geolocation) {
+            alert('Browser Anda tidak mendukung geolokasi GPS.');
+            return;
+          }
+          const btn = document.getElementById('btnGpsCheckout');
+          const originalHtml = btn.innerHTML;
+          btn.innerHTML = '<span>Mencari GPS...</span>';
+          btn.disabled = true;
+
+          navigator.geolocation.getCurrentPosition(
+            function(position) {
+              const lat = position.coords.latitude;
+              const lng = position.coords.longitude;
+              map.setView([lat, lng], 16);
+              marker.setLatLng([lat, lng]);
+              updateCoords(lat, lng);
+              btn.innerHTML = originalHtml;
+              btn.disabled = false;
+              if (window.lucide) lucide.createIcons();
+            },
+            function(error) {
+              alert('Gagal mendeteksi lokasi GPS: ' + error.message);
+              btn.innerHTML = originalHtml;
+              btn.disabled = false;
+              if (window.lucide) lucide.createIcons();
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+          );
+        };
+      });
+    </script>
+  </body>
+</html>

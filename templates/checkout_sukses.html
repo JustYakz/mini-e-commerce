@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pesanan Berhasil - Barokah E-Commerce</title>
+    <!-- Dark Mode Init Script -->
+    <script>(function(){if(localStorage.getItem('theme')==='dark'||(!localStorage.getItem('theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.setAttribute('data-theme','dark');})();</script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Core Design Tokens Stylesheet -->
+    <link rel="stylesheet" href="/static/css/style.css" />
+
+    <style>
+      .success-wrapper {
+        min-height: 85vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+      }
+      .success-card {
+        max-width: 540px;
+        width: 100%;
+        background: var(--bg-surface);
+        padding: 40px 36px;
+        border-radius: var(--radius-xl);
+        text-align: center;
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--border-color);
+      }
+      .icon-success-box {
+        width: 72px;
+        height: 72px;
+        border-radius: var(--radius-full);
+        background: var(--accent-emerald-light);
+        color: var(--accent-emerald);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+      }
+      .success-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--text-main);
+      }
+      .success-subtitle {
+        color: var(--text-muted);
+        font-size: 14px;
+        margin-bottom: 24px;
+      }
+      .order-summary-box {
+        background: var(--bg-subtle);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        text-align: left;
+        margin-bottom: 28px;
+      }
+      .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 9px 0;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 13.5px;
+      }
+      .summary-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+      }
+      .summary-row:first-child {
+        padding-top: 0;
+      }
+      .summary-label {
+        color: var(--text-muted);
+      }
+      .summary-val {
+        font-weight: 600;
+        color: var(--text-main);
+      }
+      .summary-price {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--accent-emerald);
+      }
+      .actions-group {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="success-wrapper">
+      <div class="success-card">
+        <div class="icon-success-box">
+          <i data-lucide="check-circle-2" class="lucide-xl" style="width: 44px; height: 44px;"></i>
+        </div>
+        <h2 class="success-title">Pesanan Berhasil Dibuat!</h2>
+        <p class="success-subtitle">
+          Terima kasih telah berbelanja di Barokah E-Commerce. Pesanan Anda telah tercatat ke dalam sistem.
+        </p>
+
+        <div class="order-summary-box">
+          <div class="summary-row">
+            <span class="summary-label">Nomor Pesanan</span>
+            <span class="summary-val">#{{ pesanan_id }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Metode Pembayaran</span>
+            <span class="badge badge-info">{{ metode_pembayaran or 'Transfer Bank' }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Status Awal</span>
+            <span class="badge badge-{% if status == 'diproses' %}primary{% elif status == 'menunggu_pembayaran' %}warning{% else %}secondary{% endif %}">
+              {% if status == 'menunggu_pembayaran' %}
+                Menunggu Pembayaran
+              {% elif status == 'diproses' %}
+                Pesanan Diproses Toko
+              {% else %}
+                {{ status | capitalize }}
+              {% endif %}
+            </span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Total Pembayaran</span>
+            <span class="summary-price">{{ total | rupiah }}</span>
+          </div>
+          {% if alamat_pengiriman %}
+            <div style="padding-top: 10px; font-size: 12.5px; color: var(--text-muted);">
+              <strong>Tujuan:</strong> {{ alamat_pengiriman }}
+            </div>
+          {% endif %}
+        </div>
+
+        {% if metode_pembayaran != 'COD' %}
+          <div style="margin-bottom: 24px; padding: 16px; border-radius: var(--radius-lg); background: #ecfdf5; border: 1.5px solid #a7f3d0; text-align: left;">
+            <div style="font-weight: 700; color: #065f46; font-size: 13.5px; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+              <i data-lucide="message-circle" class="lucide-sm" style="color: #059669;"></i>
+              <span>Konfirmasi Pembayaran via WhatsApp</span>
+            </div>
+            <p style="margin: 0 0 12px; font-size: 12.5px; color: #047857; line-height: 1.4;">
+              Segera kirim screenshot / bukti transfer Anda ke WhatsApp CS agar pesanan langsung kami proses dan kirimkan.
+            </p>
+            <a
+              href="https://wa.me/6283152520566?text=Halo%20Admin%20Barokah%20E-Commerce,%20saya%20sudah%20melakukan%20pembayaran%20untuk%20Pesanan%20%23{{ pesanan_id }}%20dengan%20metode%20{{ metode_pembayaran }}%20sebesar%20{{ total | rupiah }}.%20Berikut%20bukti%20transfernya."
+              target="_blank"
+              class="btn btn-emerald btn-sm"
+              style="width: 100%; justify-content: center; text-decoration: none;"
+            >
+              <i data-lucide="send" class="lucide-sm"></i>
+              <span>Kirim Bukti Bayar via WA (083152520566)</span>
+            </a>
+          </div>
+        {% endif %}
+
+        <div class="actions-group">
+          <a href="/lacak-pesanan/{{ pesanan_id }}" class="btn btn-emerald" style="padding: 12px 20px;">
+            <i data-lucide="map-pin" class="lucide-sm"></i>
+            <span>Lacak Pengiriman (Live Map)</span>
+          </a>
+          <a href="/pesanan-saya" class="btn btn-secondary" style="padding: 12px 18px;">
+            <i data-lucide="package" class="lucide-sm"></i>
+            <span>Pesanan Saya</span>
+          </a>
+          <a href="/" class="btn btn-secondary" style="padding: 12px 18px;">
+            <i data-lucide="shopping-bag" class="lucide-sm"></i>
+            <span>Katalog</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pemicu Lucide Icons -->
+    <script>
+      lucide.createIcons();
+    </script>
+  </body>
+</html>
