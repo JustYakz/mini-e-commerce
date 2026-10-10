@@ -460,16 +460,31 @@
               {% endif %}
             </div>
 
-            <!-- Tombol Bagikan ke WhatsApp (Open Graph Preview) -->
-            <a
-              href="https://api.whatsapp.com/send?text={{ (produk.nama_produk ~ ' - Harga: ' ~ (produk.harga | rupiah) ~ '%0ALink Produk: ' ~ request.url) }}"
-              target="_blank"
-              class="btn-wa-share"
-              title="Bagikan produk ini ke teman atau grup WhatsApp"
-            >
-              <i data-lucide="share-2" class="lucide-sm"></i>
-              <span>Bagikan ke WhatsApp</span>
-            </a>
+            <!-- Tombol Tambah ke Wishlist & Bagikan ke WhatsApp -->
+            <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
+              <button
+                type="button"
+                id="btnDetailWishlist"
+                class="btn-wishlist-detail {% if produk.id in user_wishlist_ids %}active{% endif %}"
+                onclick="toggleWishlist(event, {{ produk.id }})"
+                title="Simpan / Hapus dari Wishlist"
+                style="flex: 1; justify-content: center;"
+              >
+                <i data-lucide="heart" class="lucide-sm"></i>
+                <span id="wishlistText">{% if produk.id in user_wishlist_ids %}Tersimpan di Wishlist{% else %}Simpan ke Wishlist{% endif %}</span>
+              </button>
+
+              <a
+                href="https://api.whatsapp.com/send?text={{ (produk.nama_produk ~ ' - Harga: ' ~ (produk.harga | rupiah) ~ '%0ALink Produk: ' ~ request.url) }}"
+                target="_blank"
+                class="btn-wa-share"
+                style="flex: 1; margin-top: 0;"
+                title="Bagikan produk ini ke teman atau grup WhatsApp"
+              >
+                <i data-lucide="share-2" class="lucide-sm"></i>
+                <span>Bagikan WhatsApp</span>
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -498,7 +513,7 @@
             <h3 style="margin: 0 0 12px; font-size: 15px; font-weight: 700; color: var(--text-main);">
               Berikan Ulasan Anda untuk Produk Ini
             </h3>
-            <form action="/tambah-ulasan/{{ produk.id }}" method="POST">
+            <form action="/tambah-ulasan/{{ produk.id }}" method="POST" enctype="multipart/form-data">
               <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 12px;">
                 <label style="font-size: 13.5px; font-weight: 600; color: var(--text-main);">Pilih Rating Bintang:</label>
                 <div style="display: flex; gap: 4px;" id="starPicker">
@@ -526,6 +541,26 @@
                   required
                   placeholder="Ceritakan pengalaman Anda mengenai kualitas produk, packaging, dan kecepatan pengiriman..."
                 ></textarea>
+              </div>
+
+              <!-- Upload Foto Ulasan Produk -->
+              <div class="form-group" style="margin-bottom: 14px;">
+                <label style="font-size: 12.5px; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                  <i data-lucide="camera" class="lucide-sm" style="color: var(--primary);"></i>
+                  <span>Lampirkan Foto Ulasan Produk (Opsional):</span>
+                </label>
+                <input
+                  type="file"
+                  name="foto_ulasan"
+                  id="foto_ulasan"
+                  accept="image/*"
+                  class="form-control"
+                  onchange="previewReviewImage(event)"
+                  style="font-size: 12.5px; padding: 7px 10px;"
+                />
+                <div id="reviewImgPreviewBox" style="display: none; margin-top: 10px;">
+                  <img id="reviewImgPreview" src="" alt="Pratinjau Foto" style="max-height: 120px; border-radius: var(--radius-md); border: 1.5px solid var(--border-color); object-fit: cover;" />
+                </div>
               </div>
 
               <div style="display: flex; justify-content: flex-end;">
@@ -575,6 +610,19 @@
                 <p style="margin: 6px 0 0 46px; font-size: 13.5px; color: var(--text-main); line-height: 1.5;">
                   {{ ulasan.komentar }}
                 </p>
+                {% if ulasan.foto %}
+                  <div style="margin: 10px 0 0 46px;">
+                    <a href="/static/uploads/{{ ulasan.foto }}" target="_blank" title="Klik untuk melihat foto penuh">
+                      <img
+                        src="/static/uploads/{{ ulasan.foto }}"
+                        alt="Foto Ulasan Pembeli"
+                        style="max-width: 140px; max-height: 140px; border-radius: var(--radius-md); border: 1.5px solid var(--border-color); object-fit: cover; cursor: pointer; transition: transform 0.2s;"
+                        onmouseover="this.style.transform='scale(1.05)'"
+                        onmouseout="this.style.transform='scale(1)'"
+                      />
+                    </a>
+                  </div>
+                {% endif %}
               </div>
             {% endfor %}
           </div>
@@ -587,6 +635,17 @@
         {% endif %}
       </section>
     </main>
+
+    <!-- Floating WhatsApp Button -->
+    <a
+      href="https://wa.me/6283152520566?text=Halo%20Admin%20Barokah%20E-Commerce,%20saya%20ingin%20bertanya%20seputar%20produk%20{{ produk.nama_produk | urlencode }}."
+      target="_blank"
+      class="floating-wa"
+      title="Chat WhatsApp Customer Service"
+    >
+      <i data-lucide="message-circle" class="lucide-md"></i>
+      <span>Chat WhatsApp</span>
+    </a>
 
     <!-- Scripts -->
     <script>
@@ -635,6 +694,59 @@
         if (badge) badge.textContent = val;
         document.querySelectorAll('.input-selected-varian').forEach(input => {
           input.value = val;
+        });
+      }
+
+      // Preview Foto Ulasan
+      function previewReviewImage(event) {
+        const file = event.target.files[0];
+        const previewBox = document.getElementById('reviewImgPreviewBox');
+        const previewImg = document.getElementById('reviewImgPreview');
+        if (file && previewBox && previewImg) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            previewBox.style.display = 'block';
+          };
+          reader.readAsDataURL(file);
+        } else if (previewBox) {
+          previewBox.style.display = 'none';
+        }
+      }
+
+      // Toggle Wishlist di Halaman Detail
+      function toggleWishlist(event, productId) {
+        event.stopPropagation();
+        const btn = document.getElementById('btnDetailWishlist');
+        const textEl = document.getElementById('wishlistText');
+
+        fetch('/toggle-wishlist/' + productId, {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(res => {
+          if (res.status === 401) {
+            window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
+            return null;
+          }
+          return res.json();
+        })
+        .then(data => {
+          if (data && data.status === 'success') {
+            if (data.is_wishlist) {
+              btn.classList.add('active');
+              if (textEl) textEl.textContent = 'Tersimpan di Wishlist';
+            } else {
+              btn.classList.remove('active');
+              if (textEl) textEl.textContent = 'Simpan ke Wishlist';
+            }
+            lucide.createIcons();
+          }
+        })
+        .catch(err => {
+          console.error('Wishlist error:', err);
         });
       }
 

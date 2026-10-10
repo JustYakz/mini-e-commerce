@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wishlist Produk Favorit - Barokah E-Commerce</title>
+    <!-- Dark Mode Init Script -->
+    <script>(function(){if(localStorage.getItem('theme')==='dark'||(!localStorage.getItem('theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.setAttribute('data-theme','dark');})();</script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Core Design Tokens Stylesheet -->
+    <link rel="stylesheet" href="/static/css/style.css" />
+
+    <style>
+      .wishlist-container {
+        max-width: 1280px;
+        margin: 28px auto;
+        padding: 0 24px;
+      }
+      .wishlist-header {
+        background: var(--bg-surface);
+        padding: 24px 28px;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 28px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      .wishlist-title-box h1 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .wishlist-title-box p {
+        margin: 4px 0 0;
+        font-size: 13.5px;
+        color: var(--text-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Top Navbar -->
+    <nav class="navbar">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <a href="/" class="brand">
+          <img src="/static/images/logo.png" alt="Barokah E-Commerce" class="brand-logo-img" />
+          <h1>Barokah E-Commerce</h1>
+        </a>
+      </div>
+
+      <div class="nav-actions">
+        <!-- Dark Mode Toggle Button -->
+        <button type="button" class="btn-theme-toggle" onclick="toggleDarkMode()" title="Ubah Tema Gelap/Terang">
+          <i data-lucide="moon" class="lucide-sm"></i>
+        </button>
+
+        <div class="desktop-nav-links" style="display: flex; align-items: center; gap: 8px;">
+          <a href="/" class="btn btn-secondary btn-sm">
+            <i data-lucide="home"></i>
+            <span>Beranda</span>
+          </a>
+          <a href="/wishlist" class="btn btn-primary btn-sm">
+            <i data-lucide="heart"></i>
+            <span>Wishlist</span>
+            {% if wishlist_count > 0 %}
+              <span class="cart-badge" style="background: #e11d48;">{{ wishlist_count }}</span>
+            {% endif %}
+          </a>
+          <a href="/keranjang" class="btn btn-secondary btn-sm">
+            <i data-lucide="shopping-cart"></i>
+            <span>Keranjang</span>
+            {% if cart_count > 0 %}
+              <span class="cart-badge">{{ cart_count }}</span>
+            {% endif %}
+          </a>
+          <a href="/pesanan-saya" class="btn btn-secondary btn-sm">
+            <i data-lucide="package"></i>
+            <span>Pesanan Saya</span>
+          </a>
+          <a href="/profil" class="nav-user-profile-link" title="Buka Profil Saya">
+            {% if session.get('foto_profil') %}
+              <img src="/static/uploads/{{ session['foto_profil'] }}" alt="{{ session['nama'] }}" class="nav-user-avatar-img" onerror="this.src='/static/images/default_avatar.svg';" />
+            {% else %}
+              <img src="/static/images/default_avatar.svg" alt="{{ session['nama'] }}" class="nav-user-avatar-img" />
+            {% endif %}
+            <span><strong>{{ session['nama'] }}</strong></span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="wishlist-container">
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-container" style="margin-bottom: 20px;">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">
+                <i data-lucide="{% if category == 'success' %}check-circle{% elif category == 'danger' %}alert-circle{% else %}info{% endif %}"></i>
+                <span>{{ message }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <!-- Header Wishlist -->
+      <div class="wishlist-header">
+        <div class="wishlist-title-box">
+          <h1>
+            <i data-lucide="heart" style="color: #e11d48; fill: #e11d48;"></i>
+            <span>Wishlist Produk Favorit</span>
+          </h1>
+          <p>Daftar produk idaman yang telah Anda simpan. Siap dibeli kapan saja!</p>
+        </div>
+        <div>
+          <a href="/" class="btn btn-secondary btn-sm">
+            <i data-lucide="arrow-left" class="lucide-sm"></i>
+            <span>Jelajahi Produk Lainnya</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Grid Produk Favorit -->
+      {% if produk_list %}
+        <div class="grid-produk-compact">
+          {% for p in produk_list %}
+            <div class="product-card-compact" onclick="window.location.href='/produk/{{ p.id }}'">
+              <div>
+                <div class="compact-img-wrapper">
+                  <!-- Tombol Hapus dari Wishlist -->
+                  <button
+                    type="button"
+                    class="btn-wishlist-card active"
+                    onclick="toggleWishlist(event, {{ p.id }})"
+                    title="Hapus dari Wishlist"
+                  >
+                    <i data-lucide="heart" class="lucide-sm"></i>
+                  </button>
+
+                  <img
+                    src="/static/uploads/{{ p.gambar or 'default.jpg' }}"
+                    alt="{{ p.nama_produk }}"
+                    onerror="this.onerror=null; this.src='/static/uploads/default.jpg';"
+                    loading="lazy"
+                  />
+                </div>
+
+                <div class="compact-meta">
+                  <div class="compact-top-row">
+                    <span class="badge-category-sm" title="{{ p.nama_kategori or 'Umum' }}">
+                      {{ p.nama_kategori or 'Umum' }}
+                    </span>
+                    {% if p.total_ulasan > 0 and p.rating_avg > 0 %}
+                      <span class="rating-pill" title="{{ p.total_ulasan }} ulasan">
+                        <i data-lucide="star" class="lucide-sm"></i>
+                        <span>{{ "%.1f" | format(p.rating_avg) }}</span>
+                      </span>
+                    {% else %}
+                      <span class="rating-pill no-rating" title="Belum ada ulasan">
+                        <i data-lucide="star" class="lucide-sm"></i>
+                        <span>0 / Belum ada rating</span>
+                      </span>
+                    {% endif %}
+                  </div>
+
+                  <h3 class="product-name-compact" title="{{ p.nama_produk }}">{{ p.nama_produk }}</h3>
+                  <div class="price-compact">{{ p.harga | rupiah }}</div>
+
+                  <div class="stock-compact">
+                    {% if p.stok > 0 %}
+                      <span>Stok: <strong>{{ p.stok }}</strong></span>
+                    {% else %}
+                      <span class="badge-habis">Stok Habis</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tombol Aksi Belanja -->
+              <div class="card-actions-compact" onclick="event.stopPropagation()">
+                {% if p.stok > 0 %}
+                  <form action="/tambah-keranjang/{{ p.id }}" method="POST" style="flex: 1; display: flex;">
+                    <button
+                      type="submit"
+                      class="btn btn-secondary btn-sm"
+                      style="width: 100%; padding: 6px 8px; font-size: 12px; justify-content: center;"
+                      title="Tambahkan ke Keranjang"
+                    >
+                      <i data-lucide="shopping-cart" class="lucide-sm"></i>
+                      <span>+ Keranjang</span>
+                    </button>
+                  </form>
+                  <form action="/beli-sekarang/{{ p.id }}" method="POST" style="flex: 1; display: flex;">
+                    <button
+                      type="submit"
+                      class="btn btn-emerald btn-sm"
+                      style="width: 100%; padding: 6px 8px; font-size: 12px; justify-content: center;"
+                      title="Beli Langsung Sekarang"
+                    >
+                      <i data-lucide="zap" class="lucide-sm"></i>
+                      <span>Beli</span>
+                    </button>
+                  </form>
+                {% else %}
+                  <button
+                    disabled
+                    class="btn btn-secondary btn-sm"
+                    style="width: 100%; opacity: 0.6; cursor: not-allowed; justify-content: center; font-size: 12px;"
+                  >
+                    <span>Stok Habis</span>
+                  </button>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <!-- Empty State Wishlist -->
+        <div style="text-align: center; padding: 60px 24px; background: var(--bg-surface); border-radius: var(--radius-xl); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+          <div style="width: 64px; height: 64px; margin: 0 auto 18px; border-radius: var(--radius-full); background: #ffe4e6; display: flex; align-items: center; justify-content: center; color: #e11d48;">
+            <i data-lucide="heart-off" class="lucide-lg" style="width: 32px; height: 32px;"></i>
+          </div>
+          <h3 style="margin-bottom: 8px; font-size: 18px; font-weight: 700; color: var(--text-main);">Wishlist Anda Masih Kosong</h3>
+          <p style="font-size: 14px; color: var(--text-muted); max-width: 440px; margin: 0 auto 24px; line-height: 1.5;">
+            Belum ada produk favorit yang Anda simpan. Klik ikon hati pada produk yang Anda sukai untuk menyimpannya di sini.
+          </p>
+          <a href="/" class="btn btn-primary" style="padding: 10px 22px;">
+            <i data-lucide="shopping-bag" class="lucide-sm"></i>
+            <span>Mulai Jelajahi Produk</span>
+          </a>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Floating WhatsApp Button -->
+    <a
+      href="https://wa.me/6283152520566?text=Halo%20Admin%20Barokah%20E-Commerce,%20saya%20ingin%20bertanya%20seputar%20produk."
+      target="_blank"
+      class="floating-wa"
+      title="Chat WhatsApp Customer Service"
+    >
+      <i data-lucide="message-circle" class="lucide-md"></i>
+      <span>Chat WhatsApp</span>
+    </a>
+
+    <!-- Scripts -->
+    <script>
+      function toggleDarkMode() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+          document.documentElement.removeAttribute('data-theme');
+          localStorage.setItem('theme', 'light');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          localStorage.setItem('theme', 'dark');
+        }
+        if (window.lucide) lucide.createIcons();
+      }
+
+      // Toggle Wishlist AJAX
+      function toggleWishlist(e, productId) {
+        e.stopPropagation();
+        const btn = e.currentTarget;
+        fetch('/toggle-wishlist/' + productId, {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'success') {
+            window.location.reload();
+          } else if (data.status === 'unauthorized') {
+            window.location.href = '/login';
+          }
+        })
+        .catch(err => {
+          window.location.reload();
+        });
+      }
+
+      lucide.createIcons();
+    </script>
+  </body>
+</html>
+

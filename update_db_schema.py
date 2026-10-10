@@ -84,6 +84,66 @@ def run_migrations():
         """)
         print("[OK] Sample product variants initialized")
 
+        # 8. Tabel kupon (Sistem Kupon / Voucher Diskon)
+        create_kupon = """
+        CREATE TABLE IF NOT EXISTS kupon (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            kode VARCHAR(50) NOT NULL UNIQUE,
+            tipe_diskon ENUM('persen', 'nominal') NOT NULL DEFAULT 'nominal',
+            nilai_diskon DECIMAL(12,2) NOT NULL DEFAULT 0,
+            minimal_belanja DECIMAL(12,2) NOT NULL DEFAULT 0,
+            status_aktif TINYINT(1) NOT NULL DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """
+        c.execute(create_kupon)
+        print("[OK] Table kupon ready")
+
+        # Seed kupon promo
+        kupon_data = [
+            ("BAROKAH10", "persen", 10.0, 50000.0, 1),
+            ("HEMAT50K", "nominal", 50000.0, 200000.0, 1),
+            ("DISKON20K", "nominal", 20000.0, 100000.0, 1),
+            ("BAROKAHBERKAH", "persen", 15.0, 150000.0, 1),
+        ]
+        for kode, tipe, nilai, min_belanja, status in kupon_data:
+            c.execute("""
+                INSERT INTO kupon (kode, tipe_diskon, nilai_diskon, minimal_belanja, status_aktif)
+                VALUES (%s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE tipe_diskon = VALUES(tipe_diskon), nilai_diskon = VALUES(nilai_diskon), minimal_belanja = VALUES(minimal_belanja)
+            """, (kode, tipe, nilai, min_belanja, status))
+        print("[OK] Seeded coupon records")
+
+        # 9. Kolom kode_kupon dan diskon pada tabel pesanan
+        for col, col_def in [("kode_kupon", "VARCHAR(50) DEFAULT NULL"), ("diskon", "DECIMAL(12,2) DEFAULT 0")]:
+            try:
+                c.execute(f"ALTER TABLE pesanan ADD COLUMN {col} {col_def}")
+                print(f"[OK] Added pesanan.{col}")
+            except Exception as e:
+                print(f"[INFO] pesanan.{col} exists or skipped: {e}")
+
+        # 10. Tabel wishlist (Produk Favorit Pelanggan)
+        create_wishlist = """
+        CREATE TABLE IF NOT EXISTS wishlist (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            produk_id INT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_user_produk (user_id, produk_id),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (produk_id) REFERENCES produk(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """
+        c.execute(create_wishlist)
+        print("[OK] Table wishlist ready")
+
+        # 11. Kolom foto pada tabel ulasan (Ulasan Bergambar)
+        try:
+            c.execute("ALTER TABLE ulasan ADD COLUMN foto VARCHAR(255) DEFAULT NULL")
+            print("[OK] Added ulasan.foto")
+        except Exception as e:
+            print(f"[INFO] ulasan.foto exists or skipped: {e}")
+
         db.commit()
         db.close()
         print("[SUCCESS] All database migrations completed successfully!")

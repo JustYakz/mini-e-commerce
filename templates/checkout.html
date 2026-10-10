@@ -597,8 +597,9 @@
             </div>
           </div>
 
-          <!-- Hidden Input untuk Nilai Metode yang Dipilih -->
+          <!-- Hidden Input untuk Nilai Metode yang Dipilih & Kupon -->
           <input type="hidden" name="metode_pembayaran" id="selectedPaymentInput" value="" required />
+          <input type="hidden" name="kode_kupon" id="hiddenKodeKupon" value="" />
 
           <!-- Grid 4 Pilihan Metode Pembayaran Interaktif -->
           <div class="payment-options-grid">
@@ -707,10 +708,78 @@
           {% endfor %}
         </div>
 
+        <!-- 3. Kupon / Voucher Diskon Section -->
+        <div class="coupon-box" style="margin-top: 16px;">
+          <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="ticket-percent" class="lucide-sm" style="color: var(--primary);"></i>
+            <span>Punya Kode Voucher Diskon?</span>
+          </div>
+
+          <div id="couponInputContainer">
+            <div class="coupon-input-group">
+              <input
+                type="text"
+                id="inputKodeKupon"
+                class="form-control coupon-input"
+                placeholder="KODE VOUCHER"
+                autocomplete="off"
+              />
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                onclick="applyCoupon()"
+                id="btnApplyCoupon"
+                style="padding: 0 14px; font-weight: 700;"
+              >
+                <span>Pakai</span>
+              </button>
+            </div>
+            <div id="couponErrorMsg" style="display: none; color: var(--accent-rose); font-size: 12px; margin-top: 6px; font-weight: 600;"></div>
+          </div>
+
+          <!-- Voucher Berhasil Diterapkan Card -->
+          <div id="couponAppliedBox" style="display: none;" class="coupon-applied-card">
+            <div>
+              <div style="font-weight: 700; font-size: 13px; color: #065f46; display: flex; align-items: center; gap: 4px;">
+                <i data-lucide="check-circle" class="lucide-xs"></i>
+                <span id="appliedCouponCode"></span>
+              </div>
+              <div style="font-size: 11.5px; color: #047857;" id="appliedCouponDiscountText"></div>
+            </div>
+            <button type="button" onclick="removeCoupon()" class="btn btn-danger-outline btn-sm" style="padding: 3px 8px; font-size: 11px;">
+              <span>Hapus</span>
+            </button>
+          </div>
+
+          <!-- Rekomendasi Kupon Tersedia -->
+          {% if daftar_kupon %}
+            <div style="margin-top: 10px;">
+              <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Voucher Promo Tersedia:</span>
+              <div class="coupon-chips-list">
+                {% for kp in daftar_kupon %}
+                  <button
+                    type="button"
+                    class="coupon-chip"
+                    onclick="selectPresetCoupon('{{ kp.kode }}')"
+                    title="Min. Belanja {{ kp.minimal_belanja | rupiah }}"
+                  >
+                    <i data-lucide="tag" class="lucide-xs"></i>
+                    <span>{{ kp.kode }}</span>
+                  </button>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
         <div class="summary-breakdown">
           <div class="summary-row">
             <span>Subtotal Produk</span>
             <span style="font-weight: 600; color: var(--text-main);">{{ total | rupiah }}</span>
+          </div>
+          <div class="summary-row" id="rowDiscountSummary" style="display: none;">
+            <span>Diskon Voucher (<strong id="summaryDiscountCode"></strong>)</span>
+            <span id="summaryDiscountAmount" style="font-weight: 700; color: #e11d48;">-Rp 0</span>
           </div>
           <div class="summary-row">
             <span>Biaya Pengiriman</span>
@@ -722,7 +791,7 @@
           </div>
           <div class="summary-total">
             <span>Total Tagihan</span>
-            <span class="total-amount">{{ total | rupiah }}</span>
+            <span class="total-amount" id="totalAmountText">{{ total | rupiah }}</span>
           </div>
         </div>
 
@@ -995,6 +1064,90 @@
           // Fallback if clipboard API permission denied
           prompt('Salin nomor berikut:', codeText);
         });
+      }
+
+      // Logika Kupon & Voucher Diskon
+      const originalCartTotal = {{ total }};
+      let currentActiveDiscount = 0;
+
+      function applyCoupon(presetCode) {
+        const input = document.getElementById('inputKodeKupon');
+        const code = (presetCode || (input ? input.value : '')).trim().toUpperCase();
+        const errEl = document.getElementById('couponErrorMsg');
+
+        if (!code) {
+          if (errEl) {
+            errEl.textContent = 'Silakan masukkan kode voucher terlebih dahulu!';
+            errEl.style.display = 'block';
+          }
+          return;
+        }
+
+        if (errEl) errEl.style.display = 'none';
+
+        fetch('/cek-kupon', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({
+            kode: code,
+            total: originalCartTotal
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.valid) {
+            currentActiveDiscount = data.diskon;
+            document.getElementById('hiddenKodeKupon').value = data.kode;
+            document.getElementById('appliedCouponCode').textContent = 'Kupon: ' + data.kode;
+            document.getElementById('appliedCouponDiscountText').textContent = 'Hemat ' + data.diskon_format;
+
+            document.getElementById('couponInputContainer').style.display = 'none';
+            document.getElementById('couponAppliedBox').style.display = 'flex';
+
+            // Summary Breakdown
+            document.getElementById('rowDiscountSummary').style.display = 'flex';
+            document.getElementById('summaryDiscountCode').textContent = data.kode;
+            document.getElementById('summaryDiscountAmount').textContent = '-' + data.diskon_format;
+            document.getElementById('totalAmountText').textContent = data.total_format;
+
+            lucide.createIcons();
+          } else {
+            if (errEl) {
+              errEl.textContent = data.pesan || 'Kode voucher tidak valid.';
+              errEl.style.display = 'block';
+            }
+          }
+        })
+        .catch(err => {
+          if (errEl) {
+            errEl.textContent = 'Gagal memverifikasi voucher. Silakan coba lagi.';
+            errEl.style.display = 'block';
+          }
+        });
+      }
+
+      function removeCoupon() {
+        currentActiveDiscount = 0;
+        document.getElementById('hiddenKodeKupon').value = '';
+        document.getElementById('inputKodeKupon').value = '';
+
+        document.getElementById('couponInputContainer').style.display = 'block';
+        document.getElementById('couponAppliedBox').style.display = 'none';
+        document.getElementById('rowDiscountSummary').style.display = 'none';
+
+        const fmtTotal = "Rp " + Number(originalCartTotal).toLocaleString('id-ID');
+        document.getElementById('totalAmountText').textContent = fmtTotal;
+
+        const errEl = document.getElementById('couponErrorMsg');
+        if (errEl) errEl.style.display = 'none';
+      }
+
+      function selectPresetCoupon(code) {
+        document.getElementById('inputKodeKupon').value = code;
+        applyCoupon(code);
       }
 
       function triggerCheckoutSubmit() {

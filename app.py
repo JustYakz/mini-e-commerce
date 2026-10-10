@@ -11,12 +11,15 @@ for _p in _extra_paths:
     if os.path.exists(_p) and _p not in sys.path:
         sys.path.insert(0, _p)
 
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import mysql.connector
 from werkzeug.utils import secure_filename
 from datetime import datetime
+import io
+import csv
+import json
 
 app = Flask(__name__)
 app.secret_key = 'rahasia-proyek-ecommerce-flask'
@@ -66,12 +69,31 @@ def format_tanggal_filter(val):
     except Exception:
         return str(val)
 
-# Context Processor agar jumlah item keranjang & foto profil bisa diakses di semua template
+# Context Processor agar jumlah keranjang, wishlist, dan avatar bisa diakses di semua template
 @app.context_processor
 def inject_cart_count():
     cart = session.get('keranjang', {})
     total_qty = sum(cart.values()) if isinstance(cart, dict) else 0
-    return dict(cart_count=total_qty, user_foto=session.get('foto_profil', ''))
+    wishlist_count = 0
+    user_wishlist_ids = set()
+    if session.get('user_id'):
+        try:
+            db = get_db_connection()
+            cursor = db.cursor(dictionary=True)
+            cursor.execute("SELECT produk_id FROM wishlist WHERE user_id = %s", (session['user_id'],))
+            rows = cursor.fetchall()
+            user_wishlist_ids = {r['produk_id'] for r in rows}
+            wishlist_count = len(user_wishlist_ids)
+            cursor.close()
+            db.close()
+        except Exception:
+            pass
+    return dict(
+        cart_count=total_qty,
+        wishlist_count=wishlist_count,
+        user_wishlist_ids=user_wishlist_ids,
+        user_foto=session.get('foto_profil', '')
+    )
 
 # Error handlers
 @app.errorhandler(404)
@@ -102,11 +124,172 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# Route Admin Dashboard Hub
+# Route Admin Dashboard Hub & Analisis Bisnis
 @app.route('/admin')
+@app.route('/admin/dashboard')
 @admin_required
-def admin():
-    return redirect(url_for('kelola_pesanan'))
+def admin_dashboard():
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        # Total Pendapatan dari pesanan aktif (tidak dibatalkan)
+        cursor.execute("SELECT COALESCE(SUM(total_harga), 0) AS total FROM pesanan WHERE status != 'dibatalkan'")
+        total_pendapatan = float(cursor.fetchone()['total'])
+
+        # Total Seluruh Pesanan
+        cursor.execute("SELECT COUNT(*) AS total FROM pesanan")
+        total_pesanan = cursor.fetchone()['total']
+
+        # Total Pesanan Selesai
+        cursor.execute("SELECT COUNT(*) AS total FROM pesanan WHERE status = 'selesai'")
+        total_pesanan_selesai = cursor.fetchone()['total']
+
+        # Total Produk
+        cursor.execute("SELECT COUNT(*) AS total FROM produk")
+        total_produk = cursor.fetchone()['total']
+
+        # Total Pelanggan (Member)
+        cursor.execute("SELECT COUNT(*) AS total FROM users WHERE role = 'user'")
+        total_member = cursor.fetchone()['total']
+
+        # Top 5 Produk Terlaris berdasarkan kuantitas & omset
+        cursor.execute("""
+            SELECT produk.id, produk.nama_produk, produk.gambar, produk.harga, produk.stok,
+                   COALESCE(SUM(detail_pesanan.jumlah), 0) AS total_terjual,
+                   COALESCE(SUM(detail_pesanan.subtotal), 0) AS total_omset
+            FROM produk
+            LEFT JOIN detail_pesanan ON produk.id = detail_pesanan.produk_id
+            GROUP BY produk.id
+            ORDER BY total_terjual DESC, total_omset DESC
+            LIMIT 5
+        """)
+        produk_terlaris = cursor.fetchall()
+
+        # Statistik Distribusi Status Pesanan
+        cursor.execute("""
+            SELECT status, COUNT(*) AS jumlah, COALESCE(SUM(total_harga), 0) AS omset
+            FROM pesanan
+            GROUP BY status
+        """)
+        status_distribusi = cursor.fetchall()
+
+        # 10 Pesanan Terbaru
+        cursor.execute("""
+            SELECT pesanan.*, 
+                   COALESCE(users.nama, 'Pelanggan') AS nama_pembeli,
+                   COALESCE(users.email, '-') AS email_pembeli
+            FROM pesanan
+            LEFT JOIN users ON pesanan.user_id = users.id
+            ORDER BY pesanan.id DESC
+            LIMIT 10
+        """)
+        pesanan_terbaru = cursor.fetchall()
+
+        # Data Grafik Penjualan Harian (7 - 14 Hari Terakhir)
+        cursor.execute("""
+            SELECT DATE(tanggal_pesanan) AS tgl, 
+                   COALESCE(SUM(total_harga), 0) AS total_omset,
+                   COUNT(id) AS jml_order
+            FROM pesanan
+            WHERE status != 'dibatalkan'
+            GROUP BY DATE(tanggal_pesanan)
+            ORDER BY tgl ASC
+            LIMIT 14
+        """)
+        omset_harian = cursor.fetchall()
+
+        chart_labels = [row['tgl'].strftime('%d %b') if hasattr(row['tgl'], 'strftime') else str(row['tgl']) for row in omset_harian]
+        chart_omset = [float(row['total_omset']) for row in omset_harian]
+        chart_orders = [int(row['jml_order']) for row in omset_harian]
+
+        status_labels = [row['status'].replace('_', ' ').title() for row in status_distribusi]
+        status_counts = [int(row['jumlah']) for row in status_distribusi]
+
+        return render_template(
+            'admin_dashboard.html',
+            total_pendapatan=total_pendapatan,
+            total_pesanan=total_pesanan,
+            total_pesanan_selesai=total_pesanan_selesai,
+            total_produk=total_produk,
+            total_member=total_member,
+            produk_terlaris=produk_terlaris,
+            pesanan_terbaru=pesanan_terbaru,
+            status_distribusi=status_distribusi,
+            chart_labels=json.dumps(chart_labels),
+            chart_omset=json.dumps(chart_omset),
+            chart_orders=json.dumps(chart_orders),
+            status_labels=json.dumps(status_labels),
+            status_counts=json.dumps(status_counts)
+        )
+    finally:
+        cursor.close()
+        db.close()
+
+# Unduh / Ekspor Laporan Penjualan (Excel / CSV Format dengan BOM UTF-8)
+@app.route('/admin/laporan/export-csv')
+@admin_required
+def export_laporan_csv():
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        query = """
+            SELECT pesanan.*, 
+                   COALESCE(users.nama, 'Pelanggan') AS nama_pembeli,
+                   COALESCE(users.email, '-') AS email_pembeli,
+                   COALESCE(NULLIF(pesanan.no_hp, ''), users.no_hp, '-') AS no_telepon,
+                   COALESCE(NULLIF(pesanan.alamat_pengiriman, ''), users.alamat, '-') AS alamat_tujuan
+            FROM pesanan
+            LEFT JOIN users ON pesanan.user_id = users.id
+            ORDER BY pesanan.id DESC
+        """
+        cursor.execute(query)
+        daftar_pesanan = cursor.fetchall()
+
+        for p in daftar_pesanan:
+            cursor.execute("""
+                SELECT detail_pesanan.*, COALESCE(produk.nama_produk, 'Produk') AS nama_produk
+                FROM detail_pesanan
+                LEFT JOIN produk ON detail_pesanan.produk_id = produk.id
+                WHERE detail_pesanan.pesanan_id = %s
+            """, (p['id'],))
+            p['items'] = cursor.fetchall()
+
+        output = io.StringIO()
+        writer = csv.writer(output, delimiter=';')
+        writer.writerow([
+            'ID Pesanan', 'Tanggal Pesanan', 'Nama Pelanggan', 'Email', 'No Telepon',
+            'Alamat Pengiriman', 'Metode Pembayaran', 'Status Pesanan',
+            'Kode Voucher', 'Diskon (Rp)', 'Total Tagihan (Rp)', 'Daftar Produk Dipesan'
+        ])
+
+        for p in daftar_pesanan:
+            tgl_str = p['tanggal_pesanan'].strftime('%Y-%m-%d %H:%M:%S') if p.get('tanggal_pesanan') else '-'
+            item_summary = ", ".join([f"{it['nama_produk']} ({it['jumlah']}x @ Rp {float(it['harga_satuan']):,.0f})" for it in p['items']])
+            writer.writerow([
+                f"#{p['id']}",
+                tgl_str,
+                p['nama_pembeli'],
+                p['email_pembeli'],
+                p['no_telepon'],
+                p['alamat_tujuan'].replace('\n', ' ').replace('\r', ' '),
+                p.get('metode_pembayaran', '-'),
+                p.get('status', '-').capitalize(),
+                p.get('kode_kupon') or '-',
+                f"{float(p.get('diskon') or 0):.2f}",
+                f"{float(p['total_harga']):.2f}",
+                item_summary
+            ])
+
+        csv_content = '\ufeff' + output.getvalue()
+        filename = f"laporan_penjualan_barokah_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        return Response(
+            csv_content,
+            mimetype='text/csv; charset=utf-8',
+            headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+        )
+    finally:
+        cursor.close()
+        db.close()
 
 # 1. Halaman Utama (Katalog Produk dengan Pencarian & Filter Kategori)
 @app.route('/')
@@ -607,10 +790,20 @@ def tambah_ulasan(produk_id):
     db = get_db_connection()
     cursor = db.cursor()
     try:
+        # Upload Foto Ulasan Produk (Opsional)
+        foto_nama = None
+        if 'foto_ulasan' in request.files:
+            file_foto = request.files['foto_ulasan']
+            if file_foto and file_foto.filename and allowed_file(file_foto.filename):
+                ext = file_foto.filename.rsplit('.', 1)[1].lower()
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+                foto_nama = f"ulasan_{produk_id}_{session['user_id']}_{timestamp}.{ext}"
+                file_foto.save(os.path.join(app.config['UPLOAD_FOLDER'], foto_nama))
+
         cursor.execute("""
-            INSERT INTO ulasan (produk_id, user_id, rating, komentar)
-            VALUES (%s, %s, %s, %s)
-        """, (produk_id, session['user_id'], rating, komentar))
+            INSERT INTO ulasan (produk_id, user_id, rating, komentar, foto)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (produk_id, session['user_id'], rating, komentar, foto_nama))
         db.commit()
         flash("Terima kasih! Ulasan dan rating Anda berhasil disimpan.", "success")
     except Exception as e:
@@ -749,7 +942,65 @@ def hapus_keranjang(id):
         flash("Item telah dihapus dari keranjang belanja.", "info")
     return redirect(url_for('lihat_keranjang'))
 
-# 9. Halaman & Proses Checkout Pesanan
+
+# 8b. API Cek & Validasi Kupon Diskon (AJAX)
+@app.route('/cek-kupon', methods=['POST'])
+def cek_kupon():
+    data = request.get_json(silent=True) or request.form
+    kode = data.get('kode', '').strip().upper()
+    try:
+        total = float(data.get('total', 0))
+    except (ValueError, TypeError):
+        total = 0.0
+
+    if not kode:
+        return jsonify({'valid': False, 'pesan': 'Silakan masukkan kode voucher diskon!'}), 400
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT * FROM kupon WHERE UPPER(kode) = %s AND status_aktif = 1", (kode,))
+        kupon = cursor.fetchone()
+        if not kupon:
+            return jsonify({
+                'valid': False,
+                'pesan': f"Kode kupon '{kode}' tidak valid atau sudah tidak aktif."
+            })
+
+        min_belanja = float(kupon['minimal_belanja'])
+        if total < min_belanja:
+            min_fmt = f"Rp {min_belanja:,.0f}".replace(',', '.')
+            return jsonify({
+                'valid': False,
+                'pesan': f"Kupon {kupon['kode']} memerlukan minimal belanja {min_fmt} (Total belanja Anda saat ini: {f'Rp {total:,.0f}'.replace(',', '.')})."
+            })
+
+        if kupon['tipe_diskon'] == 'persen':
+            diskon = (total * float(kupon['nilai_diskon'])) / 100.0
+        else:
+            diskon = float(kupon['nilai_diskon'])
+
+        diskon = min(diskon, total)
+        total_akhir = max(0.0, total - diskon)
+        diskon_fmt = f"Rp {diskon:,.0f}".replace(',', '.')
+        total_fmt = f"Rp {total_akhir:,.0f}".replace(',', '.')
+
+        return jsonify({
+            'valid': True,
+            'kode': kupon['kode'],
+            'tipe_diskon': kupon['tipe_diskon'],
+            'nilai_diskon': float(kupon['nilai_diskon']),
+            'diskon': diskon,
+            'diskon_format': diskon_fmt,
+            'total_akhir': total_akhir,
+            'total_format': total_fmt,
+            'pesan': f"Kupon {kupon['kode']} berhasil diterapkan! Hemat {diskon_fmt}."
+        })
+    finally:
+        cursor.close()
+        db.close()
+
+# 9. Halaman & Proses Checkout Pesanan (Dengan Kupon & Diskon)
 @app.route('/checkout', methods=['GET', 'POST'])
 def checkout():
     # Pastikan user sudah login sebelum checkout
@@ -805,30 +1056,55 @@ def checkout():
             flash("Tidak ada barang valid untuk di-checkout.", "warning")
             return redirect(url_for('home'))
 
-        # GET Request: Tampilkan halaman review checkout dengan opsi pembayaran & alamat
+        # GET Request: Tampilkan halaman review checkout beserta opsi kupon aktif
         if request.method == 'GET':
+            cursor.execute("SELECT * FROM kupon WHERE status_aktif = 1 ORDER BY minimal_belanja ASC")
+            daftar_kupon = cursor.fetchall()
             return render_template(
                 'checkout.html',
                 items=items_checkout,
                 total=total_harga,
-                user=user
+                user=user,
+                daftar_kupon=daftar_kupon
             )
 
-        # POST Request: Proses Pembayaran & Buat Pesanan
+        # POST Request: Proses Pembayaran, Verifikasi Kupon, & Buat Pesanan
         nama_penerima = request.form.get('nama_penerima', user['nama']).strip()
         no_hp = request.form.get('no_hp', user.get('no_hp', '')).strip()
         alamat_pengiriman = request.form.get('alamat_pengiriman', user.get('alamat', '')).strip()
         metode_pembayaran = request.form.get('metode_pembayaran', '').strip()
         catatan = request.form.get('catatan', '').strip()
+        kode_kupon = request.form.get('kode_kupon', '').strip().upper()
+
+        # Validasi Kupon di Sisi Server
+        diskon = 0.0
+        valid_kode_kupon = None
+        float_total = float(total_harga)
+        if kode_kupon:
+            cursor.execute("SELECT * FROM kupon WHERE UPPER(kode) = %s AND status_aktif = 1", (kode_kupon,))
+            kp = cursor.fetchone()
+            if kp and float_total >= float(kp['minimal_belanja']):
+                if kp['tipe_diskon'] == 'persen':
+                    diskon = (float_total * float(kp['nilai_diskon'])) / 100.0
+                else:
+                    diskon = float(kp['nilai_diskon'])
+                diskon = min(diskon, float_total)
+                valid_kode_kupon = kp['kode']
+
+        total_harga_final = max(0.0, float_total - diskon)
 
         # Validasi Wajib Pilih Metode Pembayaran
         if not metode_pembayaran:
             flash("Silakan pilih salah satu metode pembayaran terlebih dahulu sebelum membuat pesanan!", "warning")
-            return render_template('checkout.html', items=items_checkout, total=total_harga, user=user)
+            cursor.execute("SELECT * FROM kupon WHERE status_aktif = 1 ORDER BY minimal_belanja ASC")
+            daftar_kupon = cursor.fetchall()
+            return render_template('checkout.html', items=items_checkout, total=total_harga, user=user, daftar_kupon=daftar_kupon)
 
         if not no_hp or not alamat_pengiriman:
             flash("Nomor HP dan Alamat Pengiriman lengkap wajib diisi untuk pengiriman pesanan!", "warning")
-            return render_template('checkout.html', items=items_checkout, total=total_harga, user=user)
+            cursor.execute("SELECT * FROM kupon WHERE status_aktif = 1 ORDER BY minimal_belanja ASC")
+            daftar_kupon = cursor.fetchall()
+            return render_template('checkout.html', items=items_checkout, total=total_harga, user=user, daftar_kupon=daftar_kupon)
 
         # Update profil user jika sebelumnya belum ada nomor HP atau alamat
         if not user.get('no_hp') or not user.get('alamat'):
@@ -838,10 +1114,9 @@ def checkout():
             """, (no_hp, alamat_pengiriman, user['id']))
 
         # Tentukan status awal berdasarkan metode pembayaran
-        # COD -> langsung diproses toko; Transfer Bank / E-Wallet -> menunggu pembayaran
         status_awal = 'diproses' if 'COD' in metode_pembayaran.upper() else 'menunggu_pembayaran'
 
-        # Koordinat: Gudang Jakarta Pusat & Titik Lokasi Pembeli (Location Picker)
+        # Koordinat kurir & tujuan
         kurir_lat = -6.175392
         kurir_lng = 106.827153
         
@@ -854,7 +1129,6 @@ def checkout():
             try:
                 tujuan_lat = float(req_lat)
                 tujuan_lng = float(req_lng)
-                # Simpan juga ke profil jika profil belum punya koordinat
                 if not user.get('latitude') or not user.get('longitude'):
                     cursor.execute("UPDATE users SET latitude = %s, longitude = %s WHERE id = %s", (tujuan_lat, tujuan_lng, user['id']))
             except (ValueError, TypeError):
@@ -866,15 +1140,15 @@ def checkout():
             except (ValueError, TypeError):
                 pass
 
-        # Simpan Header Pesanan
+        # Simpan Header Pesanan Beserta Diskon & Kupon
         query_pesanan = """
             INSERT INTO pesanan 
-            (user_id, total_harga, status, metode_pembayaran, alamat_pengiriman, no_hp, kurir_lat, kurir_lng, tujuan_lat, tujuan_lng) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            (user_id, total_harga, status, metode_pembayaran, alamat_pengiriman, no_hp, kurir_lat, kurir_lng, tujuan_lat, tujuan_lng, kode_kupon, diskon) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         cursor.execute(query_pesanan, (
-            session['user_id'], total_harga, status_awal, metode_pembayaran, alamat_pengiriman, no_hp,
-            kurir_lat, kurir_lng, tujuan_lat, tujuan_lng
+            session['user_id'], total_harga_final, status_awal, metode_pembayaran, alamat_pengiriman, no_hp,
+            kurir_lat, kurir_lng, tujuan_lat, tujuan_lng, valid_kode_kupon, diskon
         ))
         pesanan_id = cursor.lastrowid
 
@@ -910,7 +1184,9 @@ def checkout():
         return render_template(
             'checkout_sukses.html',
             pesanan_id=pesanan_id,
-            total=total_harga,
+            total=total_harga_final,
+            diskon=diskon,
+            kode_kupon=valid_kode_kupon,
             status=status_awal,
             metode_pembayaran=metode_pembayaran,
             alamat_pengiriman=alamat_pengiriman,
@@ -922,6 +1198,88 @@ def checkout():
         db.rollback()
         flash(f"Terjadi kesalahan saat memproses checkout: {e}", "danger")
         return redirect(url_for('lihat_keranjang'))
+    finally:
+        cursor.close()
+        db.close()
+
+# 9b. Halaman & Manajemen Wishlist (Produk Favorit)
+@app.route('/wishlist')
+def wishlist():
+    if 'user_id' not in session:
+        flash("Silakan login terlebih dahulu untuk mengakses daftar wishlist Anda.", "warning")
+        return redirect(url_for('login', next='/wishlist'))
+
+    user_id = session['user_id']
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT produk.*, kategori.nama_kategori,
+                   ROUND(COALESCE(AVG(ulasan.rating), 0.0), 1) AS rating_avg,
+                   COUNT(ulasan.id) AS total_ulasan,
+                   wishlist.created_at AS tgl_wishlist
+            FROM wishlist
+            JOIN produk ON wishlist.produk_id = produk.id
+            LEFT JOIN kategori ON produk.kategori_id = kategori.id
+            LEFT JOIN ulasan ON produk.id = ulasan.produk_id
+            WHERE wishlist.user_id = %s
+            GROUP BY produk.id
+            ORDER BY wishlist.id DESC
+        """, (user_id,))
+        produk_list = cursor.fetchall()
+        return render_template('wishlist.html', produk_list=produk_list)
+    finally:
+        cursor.close()
+        db.close()
+
+# 9c. Toggle Wishlist (Tambah / Hapus Produk dari Favorit - AJAX & Standard)
+@app.route('/toggle-wishlist/<int:produk_id>', methods=['GET', 'POST'])
+def toggle_wishlist(produk_id):
+    if 'user_id' not in session:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json:
+            return jsonify({'status': 'unauthorized', 'pesan': 'Silakan masuk akun terlebih dahulu.'}), 401
+        flash("Silakan login terlebih dahulu untuk menambahkan produk ke wishlist.", "warning")
+        return redirect(url_for('login', next=request.referrer or url_for('home')))
+
+    user_id = session['user_id']
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT id FROM wishlist WHERE user_id = %s AND produk_id = %s", (user_id, produk_id))
+        ada = cursor.fetchone()
+        if ada:
+            cursor.execute("DELETE FROM wishlist WHERE id = %s", (ada['id'],))
+            db.commit()
+            action = 'removed'
+            is_wishlist = False
+            pesan = "Produk dihapus dari Wishlist."
+        else:
+            cursor.execute("INSERT INTO wishlist (user_id, produk_id) VALUES (%s, %s)", (user_id, produk_id))
+            db.commit()
+            action = 'added'
+            is_wishlist = True
+            pesan = "Produk berhasil ditambahkan ke Wishlist!"
+
+        cursor.execute("SELECT COUNT(*) AS total FROM wishlist WHERE user_id = %s", (user_id,))
+        total_wishlist = cursor.fetchone()['total']
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json:
+            return jsonify({
+                'status': 'success',
+                'action': action,
+                'is_wishlist': is_wishlist,
+                'total_wishlist': total_wishlist,
+                'pesan': pesan
+            })
+
+        flash(pesan, "success" if action == 'added' else "info")
+        return redirect(request.referrer or url_for('wishlist'))
+    except Exception as e:
+        db.rollback()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json:
+            return jsonify({'status': 'error', 'pesan': str(e)}), 500
+        flash(f"Gagal memproses wishlist: {e}", "danger")
+        return redirect(request.referrer or url_for('home'))
     finally:
         cursor.close()
         db.close()

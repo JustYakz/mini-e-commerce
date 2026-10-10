@@ -568,6 +568,10 @@
 
         <div class="desktop-nav-links" style="display: flex; align-items: center; gap: 8px;">
           {% if session.get('role') == 'admin' %}
+            <a href="/admin/dashboard" class="btn btn-primary btn-sm">
+              <i data-lucide="layout-dashboard"></i>
+              <span>Dashboard</span>
+            </a>
             <a href="/kelola-kategori" class="btn btn-secondary btn-sm">
               <i data-lucide="tag"></i>
               <span>Kelola Kategori</span>
@@ -581,6 +585,13 @@
               <span>Tambah Produk</span>
             </a>
           {% else %}
+            <a href="/wishlist" class="btn btn-secondary btn-sm" title="Produk Favorit">
+              <i data-lucide="heart" style="color: #e11d48;"></i>
+              <span>Wishlist</span>
+              {% if wishlist_count > 0 %}
+                <span class="cart-badge" style="background: #e11d48;">{{ wishlist_count }}</span>
+              {% endif %}
+            </a>
             <a href="/keranjang" class="btn btn-secondary btn-sm">
               <i data-lucide="shopping-cart"></i>
               <span>Keranjang</span>
@@ -670,6 +681,10 @@
           <span>Katalog Produk</span>
         </a>
         {% if session.get('role') == 'admin' %}
+          <a href="/admin/dashboard" class="btn btn-primary btn-sm" style="justify-content: flex-start; text-decoration: none;">
+            <i data-lucide="layout-dashboard" class="lucide-sm"></i>
+            <span>Dashboard Admin</span>
+          </a>
           <a href="/kelola-kategori" class="btn btn-secondary btn-sm" style="justify-content: flex-start; text-decoration: none;">
             <i data-lucide="tag" class="lucide-sm"></i>
             <span>Kelola Kategori</span>
@@ -683,6 +698,13 @@
             <span>Tambah Produk</span>
           </a>
         {% else %}
+          <a href="/wishlist" class="btn btn-secondary btn-sm" style="justify-content: flex-start; text-decoration: none;">
+            <i data-lucide="heart" class="lucide-sm" style="color: #e11d48;"></i>
+            <span>Wishlist Produk</span>
+            {% if wishlist_count > 0 %}
+              <span class="cart-badge" style="background: #e11d48;">{{ wishlist_count }}</span>
+            {% endif %}
+          </a>
           <a href="/keranjang" class="btn btn-secondary btn-sm" style="justify-content: flex-start; text-decoration: none;">
             <i data-lucide="shopping-cart" class="lucide-sm"></i>
             <span>Keranjang</span>
@@ -857,6 +879,25 @@
               >
                 <div>
                   <div class="compact-img-wrapper">
+                    {% if session.get('user_id') %}
+                      <button
+                        type="button"
+                        class="btn-wishlist-card {% if p.id in user_wishlist_ids %}active{% endif %}"
+                        onclick="toggleWishlist(event, {{ p.id }})"
+                        title="{% if p.id in user_wishlist_ids %}Hapus dari Wishlist{% else %}Simpan ke Wishlist{% endif %}"
+                      >
+                        <i data-lucide="heart" class="lucide-sm"></i>
+                      </button>
+                    {% else %}
+                      <a
+                        href="/login"
+                        class="btn-wishlist-card"
+                        onclick="event.stopPropagation()"
+                        title="Masuk akun untuk simpan ke Wishlist"
+                      >
+                        <i data-lucide="heart" class="lucide-sm"></i>
+                      </a>
+                    {% endif %}
                     <img
                       src="/static/uploads/{{ p.gambar or 'default.jpg' }}"
                       alt="{{ p.nama_produk }}"
@@ -994,6 +1035,17 @@
       </main>
     </div>
 
+    <!-- Floating WhatsApp Button -->
+    <a
+      href="https://wa.me/6283152520566?text=Halo%20Admin%20Barokah%20E-Commerce,%20saya%20ingin%20bertanya%20seputar%20produk."
+      target="_blank"
+      class="floating-wa"
+      title="Chat WhatsApp Customer Service"
+    >
+      <i data-lucide="message-circle" class="lucide-md"></i>
+      <span>Chat WhatsApp</span>
+    </a>
+
     <!-- Scripts: Collapsible Sidebar & Direct Product Navigation -->
     <script>
       // 1. Collapsible Sidebar Logic
@@ -1035,7 +1087,41 @@
         window.location.href = '/produk/' + productId;
       }
 
-      // 3. Dark Mode Toggle Logic
+      // 3. Toggle Wishlist AJAX
+      function toggleWishlist(event, productId) {
+        event.stopPropagation();
+        const btn = event.currentTarget;
+        fetch('/toggle-wishlist/' + productId, {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(res => {
+          if (res.status === 401) {
+            window.location.href = '/login';
+            return null;
+          }
+          return res.json();
+        })
+        .then(data => {
+          if (data && data.status === 'success') {
+            if (data.is_wishlist) {
+              btn.classList.add('active');
+              btn.setAttribute('title', 'Hapus dari Wishlist');
+            } else {
+              btn.classList.remove('active');
+              btn.setAttribute('title', 'Simpan ke Wishlist');
+            }
+            lucide.createIcons();
+          }
+        })
+        .catch(err => {
+          console.error('Wishlist error:', err);
+        });
+      }
+
+      // 4. Dark Mode Toggle Logic
       function toggleDarkMode() {
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
         if (isDark) {
@@ -1048,7 +1134,7 @@
         if (window.lucide) lucide.createIcons();
       }
 
-      // 4. Mobile Drawer Navigation Toggle Logic
+      // 5. Mobile Drawer Navigation Toggle Logic
       function toggleMobileDrawer() {
         const drawer = document.getElementById('mobileDrawer');
         const overlay = document.getElementById('mobileDrawerOverlay');
