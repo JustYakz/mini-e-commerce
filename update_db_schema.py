@@ -57,6 +57,33 @@ def run_migrations():
         """)
         print(f"[OK] Synced {c.rowcount} existing product primary pictures into produk_gambar")
 
+        # 5. Kolom varian pada tabel produk
+        try:
+            c.execute("ALTER TABLE produk ADD COLUMN varian VARCHAR(255) DEFAULT NULL")
+            print("[OK] Added produk.varian")
+        except Exception as e:
+            print(f"[INFO] produk.varian exists or skipped: {e}")
+
+        # 6. Kolom varian pada tabel detail_pesanan
+        try:
+            c.execute("ALTER TABLE detail_pesanan ADD COLUMN varian VARCHAR(100) DEFAULT NULL")
+            print("[OK] Added detail_pesanan.varian")
+        except Exception as e:
+            print(f"[INFO] detail_pesanan.varian exists or skipped: {e}")
+
+        # 7. Isi varian sampel pada beberapa produk yang belum memiliki varian
+        c.execute("""
+            UPDATE produk 
+            SET varian = 'Hitam, Putih, Silver' 
+            WHERE (varian IS NULL OR varian = '') AND id IN (5, 6, 7, 8)
+        """)
+        c.execute("""
+            UPDATE produk 
+            SET varian = 'Standar, Deluxe, Premium' 
+            WHERE (varian IS NULL OR varian = '') AND id NOT IN (5, 6, 7, 8) LIMIT 10
+        """)
+        print("[OK] Sample product variants initialized")
+
         db.commit()
         db.close()
         print("[SUCCESS] All database migrations completed successfully!")

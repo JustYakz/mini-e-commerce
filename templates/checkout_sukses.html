@@ -166,6 +166,10 @@
         {% endif %}
 
         <div class="actions-group">
+          <a href="/invoice/{{ pesanan_id }}" target="_blank" class="btn btn-secondary" style="padding: 12px 18px;">
+            <i data-lucide="printer" class="lucide-sm"></i>
+            <span>Cetak Invoice</span>
+          </a>
           <a href="/lacak-pesanan/{{ pesanan_id }}" class="btn btn-emerald" style="padding: 12px 20px;">
             <i data-lucide="map-pin" class="lucide-sm"></i>
             <span>Lacak Pengiriman (Live Map)</span>

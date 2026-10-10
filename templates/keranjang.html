@@ -271,7 +271,14 @@
                         alt="{{ item.produk.nama_produk }}"
                         onerror="this.onerror=null; this.src='/static/uploads/default.jpg';"
                       />
-                      <span class="product-title">{{ item.produk.nama_produk }}</span>
+                      <div>
+                        <span class="product-title">{{ item.produk.nama_produk }}</span>
+                        {% if item.varian %}
+                          <div style="font-size: 11.5px; color: var(--primary); font-weight: 600; margin-top: 2px;">
+                            Varian: {{ item.varian }}
+                          </div>
+                        {% endif %}
+                      </div>
                     </div>
                   </td>
                   <td style="color: var(--text-muted); font-size: 14px;">{{ item.produk.harga | rupiah }}</td>

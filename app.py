@@ -13,6 +13,7 @@ for _p in _extra_paths:
 
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 import mysql.connector
 from werkzeug.utils import secure_filename
 from datetime import datetime
@@ -87,6 +88,25 @@ def request_entity_too_large(error):
 def internal_error(error):
     flash("Terjadi kendala pada server. Silakan coba kembali beberapa saat lagi.", "danger")
     return redirect(url_for('home'))
+
+# Decorator proteksi hak akses Administrator
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('user_id'):
+            flash("Silakan masuk terlebih dahulu untuk mengakses halaman administrator.", "warning")
+            return redirect(url_for('login', next=request.path))
+        if session.get('role') != 'admin':
+            flash("Akses ditolak! Halaman ini hanya untuk Administrator.", "danger")
+            return redirect(url_for('home'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Route Admin Dashboard Hub
+@app.route('/admin')
+@admin_required
+def admin():
+    return redirect(url_for('kelola_pesanan'))
 
 # 1. Halaman Utama (Katalog Produk dengan Pencarian & Filter Kategori)
 @app.route('/')
@@ -190,11 +210,8 @@ def home():
 
 # 2. Halaman & Proses Tambah Produk (Admin)
 @app.route('/tambah-produk', methods=['GET', 'POST'])
+@admin_required
 def tambah_produk():
-    if session.get('role') != 'admin':
-        flash("Akses ditolak! Halaman ini hanya untuk Administrator.", "danger")
-        return redirect(url_for('home'))
-
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     try:
@@ -202,6 +219,7 @@ def tambah_produk():
             nama = request.form.get('nama_produk', '').strip()
             kategori_id = request.form.get('kategori_id')
             deskripsi = request.form.get('deskripsi', '').strip()
+            varian = request.form.get('varian', '').strip()
             
             if not nama or not kategori_id:
                 flash("Nama produk dan kategori wajib diisi!", "warning")
@@ -248,10 +266,10 @@ def tambah_produk():
 
             # Simpan ke Database
             query = """
-                INSERT INTO produk (kategori_id, nama_produk, deskripsi, harga, stok, gambar)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO produk (kategori_id, nama_produk, deskripsi, harga, stok, gambar, varian)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
-            cursor.execute(query, (kategori_id, nama, deskripsi, harga, stok, nama_gambar))
+            cursor.execute(query, (kategori_id, nama, deskripsi, harga, stok, nama_gambar, varian))
             produk_id = cursor.lastrowid
 
             # Simpan foto ke tabel produk_gambar
@@ -279,11 +297,8 @@ def tambah_produk():
 
 # 3. Halaman & Proses Edit Produk (Admin)
 @app.route('/edit-produk/<int:id>', methods=['GET', 'POST'])
+@admin_required
 def edit_produk(id):
-    if session.get('role') != 'admin':
-        flash("Akses ditolak! Halaman ini hanya untuk Administrator.", "danger")
-        return redirect(url_for('home'))
-
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     try:
@@ -298,6 +313,7 @@ def edit_produk(id):
             nama = request.form.get('nama_produk', '').strip()
             kategori_id = request.form.get('kategori_id')
             deskripsi = request.form.get('deskripsi', '').strip()
+            varian = request.form.get('varian', '').strip()
             
             if not nama or not kategori_id:
                 flash("Nama produk dan kategori wajib diisi!", "warning")
@@ -352,10 +368,10 @@ def edit_produk(id):
             # Update data ke database
             query = """
                 UPDATE produk 
-                SET kategori_id = %s, nama_produk = %s, deskripsi = %s, harga = %s, stok = %s, gambar = %s
+                SET kategori_id = %s, nama_produk = %s, deskripsi = %s, harga = %s, stok = %s, gambar = %s, varian = %s
                 WHERE id = %s
             """
-            cursor.execute(query, (kategori_id, nama, deskripsi, harga, stok, nama_gambar, id))
+            cursor.execute(query, (kategori_id, nama, deskripsi, harga, stok, nama_gambar, varian, id))
             db.commit()
             flash(f"Produk '{nama}' berhasil diperbarui!", "success")
             return redirect(url_for('edit_produk', id=id))
@@ -375,11 +391,8 @@ def edit_produk(id):
 
 # 3b. Hapus Foto Individual dari Galeri Produk (Admin)
 @app.route('/hapus-foto-produk/<int:foto_id>', methods=['POST', 'GET'])
+@admin_required
 def hapus_foto_produk(foto_id):
-    if session.get('role') != 'admin':
-        flash("Akses ditolak! Halaman ini hanya untuk Administrator.", "danger")
-        return redirect(url_for('home'))
-
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     try:
@@ -418,11 +431,8 @@ def hapus_foto_produk(foto_id):
 
 # 4. Proses Hapus Produk (Admin)
 @app.route('/hapus-produk/<int:id>')
+@admin_required
 def hapus_produk(id):
-    if session.get('role') != 'admin':
-        flash("Akses ditolak! Halaman ini hanya untuk Administrator.", "danger")
-        return redirect(url_for('home'))
-
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     try:
@@ -564,6 +574,13 @@ def beli_sekarang(id):
 
         jumlah = max(1, min(jumlah, produk['stok']))
 
+        # Simpan varian jika dipilih
+        varian = request.values.get('varian', '').strip()
+        if 'item_varian' not in session:
+            session['item_varian'] = {}
+        if varian:
+            session['item_varian'][str(id)] = varian
+
         # Langsung set produk ini ke sesi transaksi checkout (bypass keranjang standar)
         session['keranjang'] = {str(id): jumlah}
         session.modified = True
@@ -605,8 +622,8 @@ def tambah_ulasan(produk_id):
 
     return redirect(request.referrer or url_for('detail_produk', id=produk_id))
 
-# 5. Tambah Produk ke Keranjang (Dengan Validasi Stok)
-@app.route('/tambah-keranjang/<int:id>')
+# 5. Tambah Produk ke Keranjang (Dengan Validasi Stok & Varian)
+@app.route('/tambah-keranjang/<int:id>', methods=['GET', 'POST'])
 def tambah_keranjang(id):
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
@@ -624,16 +641,34 @@ def tambah_keranjang(id):
         if 'keranjang' not in session:
             session['keranjang'] = {}
 
+        if 'item_varian' not in session:
+            session['item_varian'] = {}
+
+        varian = request.values.get('varian', '').strip()
+        if varian:
+            session['item_varian'][str(id)] = varian
+
         keranjang = session['keranjang']
         str_id = str(id)
         current_qty = keranjang.get(str_id, 0)
 
-        if current_qty + 1 > produk['stok']:
+        tambah_qty = 1
+        if request.values.get('jumlah'):
+            try:
+                tambah_qty = max(1, int(request.values.get('jumlah', 1)))
+            except (ValueError, TypeError):
+                tambah_qty = 1
+
+        if current_qty + tambah_qty > produk['stok']:
             flash(f"Jumlah di keranjang sudah mencapai batas stok yang tersedia ({produk['stok']} pcs)!", "warning")
         else:
-            keranjang[str_id] = current_qty + 1
+            keranjang[str_id] = current_qty + tambah_qty
             session.modified = True
-            flash(f"'{produk['nama_produk']}' dimasukkan ke keranjang!", "success")
+            msg = f"'{produk['nama_produk']}'"
+            if varian:
+                msg += f" (Varian: {varian})"
+            msg += " berhasil dimasukkan ke keranjang!"
+            flash(msg, "success")
 
     except Exception as e:
         flash(f"Gagal menambahkan ke keranjang: {e}", "danger")
@@ -653,6 +688,8 @@ def kurang_keranjang(id):
             flash("Jumlah item berhasil dikurangi.", "info")
         else:
             del session['keranjang'][str_id]
+            if 'item_varian' in session and str_id in session['item_varian']:
+                del session['item_varian'][str_id]
             flash("Item dihapus dari keranjang belanja.", "info")
         session.modified = True
     return redirect(url_for('lihat_keranjang'))
@@ -668,6 +705,7 @@ def lihat_keranjang():
     items = []
     total = 0
     items_to_remove = []
+    item_varian_dict = session.get('item_varian', {})
 
     try:
         for prod_id, jumlah in list(session['keranjang'].items()):
@@ -679,7 +717,8 @@ def lihat_keranjang():
                 items.append({
                     'produk': produk,
                     'jumlah': jumlah,
-                    'subtotal': subtotal
+                    'subtotal': subtotal,
+                    'varian': item_varian_dict.get(str(prod_id), '')
                 })
             else:
                 items_to_remove.append(prod_id)
@@ -688,6 +727,8 @@ def lihat_keranjang():
         if items_to_remove:
             for pid in items_to_remove:
                 del session['keranjang'][pid]
+                if pid in item_varian_dict:
+                    del item_varian_dict[pid]
             session.modified = True
 
     finally:
@@ -702,6 +743,8 @@ def hapus_keranjang(id):
     str_id = str(id)
     if 'keranjang' in session and str_id in session['keranjang']:
         del session['keranjang'][str_id]
+        if 'item_varian' in session and str_id in session['item_varian']:
+            del session['item_varian'][str_id]
         session.modified = True
         flash("Item telah dihapus dari keranjang belanja.", "info")
     return redirect(url_for('lihat_keranjang'))
@@ -732,6 +775,7 @@ def checkout():
 
         total_harga = 0
         items_checkout = []
+        item_varian_dict = session.get('item_varian', {})
 
         for prod_id, jumlah in session['keranjang'].items():
             cursor.execute("SELECT * FROM produk WHERE id = %s", (prod_id,))
@@ -753,7 +797,8 @@ def checkout():
                 'gambar': produk['gambar'] or 'default.jpg',
                 'jumlah': jumlah,
                 'harga_satuan': produk['harga'],
-                'subtotal': subtotal
+                'subtotal': subtotal,
+                'varian': item_varian_dict.get(str(prod_id), '')
             })
 
         if not items_checkout:
@@ -836,15 +881,16 @@ def checkout():
         # Simpan Detail Pesanan & Kurangi Stok Produk
         for item in items_checkout:
             query_detail = """
-                INSERT INTO detail_pesanan (pesanan_id, produk_id, jumlah, harga_satuan, subtotal)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO detail_pesanan (pesanan_id, produk_id, jumlah, harga_satuan, subtotal, varian)
+                VALUES (%s, %s, %s, %s, %s, %s)
             """
             cursor.execute(query_detail, (
                 pesanan_id, 
                 item['produk_id'], 
                 item['jumlah'], 
                 item['harga_satuan'], 
-                item['subtotal']
+                item['subtotal'],
+                item.get('varian', '')
             ))
 
             # Kurangi stok produk secara atomik dengan proteksi stok negatif
@@ -859,6 +905,7 @@ def checkout():
 
         # Kosongkan keranjang belanja di session
         session.pop('keranjang', None)
+        session.pop('item_varian', None)
         nama_produk_ringkasan = ", ".join([it['nama_produk'] for it in items_checkout])
         return render_template(
             'checkout_sukses.html',
@@ -1157,6 +1204,62 @@ def hapus_foto_profil():
 
     return redirect(url_for('profil'))
 
+# 12c. Ubah Password Pengguna (Keamanan & Autentikasi dengan Werkzeug)
+@app.route('/ubah-password', methods=['POST'])
+def ubah_password():
+    if 'user_id' not in session:
+        flash("Silakan login terlebih dahulu untuk mengubah password.", "warning")
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    password_lama = request.form.get('password_lama', '').strip()
+    password_baru = request.form.get('password_baru', '').strip()
+    konfirmasi = request.form.get('konfirmasi_password', '').strip()
+
+    if not password_lama or not password_baru or not konfirmasi:
+        flash("Semua kolom password wajib diisi!", "warning")
+        return redirect(url_for('profil'))
+
+    if len(password_baru) < 4:
+        flash("Password baru minimal harus 4 karakter!", "warning")
+        return redirect(url_for('profil'))
+
+    if password_baru != konfirmasi:
+        flash("Konfirmasi password baru tidak cocok!", "warning")
+        return redirect(url_for('profil'))
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT password FROM users WHERE id = %s", (user_id,))
+        user = cursor.fetchone()
+        if not user:
+            flash("Data akun pengguna tidak ditemukan.", "danger")
+            return redirect(url_for('login'))
+
+        is_valid = False
+        try:
+            is_valid = check_password_hash(user['password'], password_lama)
+        except Exception:
+            is_valid = (user['password'] == password_lama)
+
+        if not is_valid:
+            flash("Password saat ini yang Anda masukkan salah!", "danger")
+            return redirect(url_for('profil'))
+
+        new_hash = generate_password_hash(password_baru)
+        cursor.execute("UPDATE users SET password = %s WHERE id = %s", (new_hash, user_id))
+        db.commit()
+        flash("Password akun Anda berhasil diperbarui dengan aman!", "success")
+        return redirect(url_for('profil'))
+    except Exception as e:
+        db.rollback()
+        flash(f"Gagal mengubah password: {e}", "danger")
+        return redirect(url_for('profil'))
+    finally:
+        cursor.close()
+        db.close()
+
 # 13. Riwayat Pesanan Pembeli (Customer)
 @app.route('/pesanan-saya')
 def pesanan_saya():
@@ -1191,6 +1294,56 @@ def pesanan_saya():
             pesanan['rincian'] = cursor.fetchall()
 
         return render_template('pesanan_saya.html', pesanan_list=daftar_pesanan)
+    finally:
+        cursor.close()
+        db.close()
+
+# 13c. Unduh & Cetak Invoice Resmi (PDF / Printable)
+@app.route('/invoice/<int:id>')
+@app.route('/cetak-invoice/<int:id>')
+def cetak_invoice(id):
+    if 'user_id' not in session:
+        flash("Silakan login untuk melihat invoice pesanan.", "warning")
+        return redirect(url_for('login', next=f'/invoice/{id}'))
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        query_pesanan = """
+            SELECT pesanan.*, 
+                   pesanan.tanggal_pesanan AS tanggal,
+                   COALESCE(users.nama, 'Pelanggan') AS nama_pembeli,
+                   COALESCE(users.email, '-') AS email_pembeli,
+                   COALESCE(NULLIF(pesanan.no_hp, ''), users.no_hp, '-') AS telepon_pembeli,
+                   COALESCE(NULLIF(pesanan.alamat_pengiriman, ''), users.alamat, '-') AS alamat_tujuan
+            FROM pesanan
+            LEFT JOIN users ON pesanan.user_id = users.id
+            WHERE pesanan.id = %s
+        """
+        cursor.execute(query_pesanan, (id,))
+        pesanan = cursor.fetchone()
+
+        if not pesanan:
+            flash("Pesanan tidak ditemukan!", "danger")
+            return redirect(url_for('pesanan_saya'))
+
+        # Proteksi hak akses: pembeli hanya bisa lihat pesanan miliknya, admin bisa lihat semua
+        if session.get('role') != 'admin' and pesanan['user_id'] != session.get('user_id'):
+            flash("Akses ditolak! Anda tidak memiliki izin untuk melihat invoice ini.", "danger")
+            return redirect(url_for('pesanan_saya'))
+
+        query_detail = """
+            SELECT detail_pesanan.*,
+                   COALESCE(produk.nama_produk, 'Produk') AS nama_produk,
+                   COALESCE(produk.gambar, 'default.jpg') AS gambar
+            FROM detail_pesanan
+            LEFT JOIN produk ON detail_pesanan.produk_id = produk.id
+            WHERE detail_pesanan.pesanan_id = %s
+        """
+        cursor.execute(query_detail, (id,))
+        items = cursor.fetchall()
+
+        return render_template('invoice.html', pesanan=pesanan, items=items)
     finally:
         cursor.close()
         db.close()
@@ -1336,11 +1489,8 @@ def terima_pesanan(id):
 
 # 14. Kelola Pesanan Masuk (Admin)
 @app.route('/kelola-pesanan')
+@admin_required
 def kelola_pesanan():
-    if session.get('role') != 'admin':
-        flash("Akses ditolak! Halaman ini hanya untuk Administrator.", "danger")
-        return redirect(url_for('home'))
-
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     try:
@@ -1377,11 +1527,8 @@ def kelola_pesanan():
 # 15. Update Status Pesanan & Koordinat Kurir (Admin)
 @app.route('/update-status/<int:id>', methods=['POST'])
 @app.route('/update-status-pesanan/<int:id>', methods=['POST'])
+@admin_required
 def update_status(id):
-    if session.get('role') != 'admin':
-        flash("Akses ditolak! Halaman ini hanya untuk Administrator.", "danger")
-        return redirect(url_for('home'))
-
     status_baru = request.form.get('status')
     STATUS_VALID = ['menunggu_pembayaran', 'pending', 'dibayar', 'diproses', 'dikirim', 'selesai', 'dibatalkan']
 
@@ -1441,11 +1588,8 @@ def update_status(id):
 
 # 16. Hapus Pesanan (Khusus Admin)
 @app.route('/hapus-pesanan/<int:id>')
+@admin_required
 def hapus_pesanan(id):
-    if session.get('role') != 'admin':
-        flash("Akses ditolak! Halaman ini hanya untuk Administrator.", "danger")
-        return redirect(url_for('home'))
-
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     try:
@@ -1471,11 +1615,8 @@ def hapus_pesanan(id):
 
 # 17. Kelola Kategori (Khusus Admin)
 @app.route('/kelola-kategori', methods=['GET', 'POST'])
+@admin_required
 def kelola_kategori():
-    if session.get('role') != 'admin':
-        flash("Akses ditolak! Halaman ini hanya untuk Administrator.", "danger")
-        return redirect(url_for('home'))
-
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     try:
@@ -1516,11 +1657,8 @@ def kelola_kategori():
 
 # 18. Hapus Kategori (Khusus Admin)
 @app.route('/hapus-kategori/<int:id>')
+@admin_required
 def hapus_kategori(id):
-    if session.get('role') != 'admin':
-        flash("Akses ditolak! Halaman ini hanya untuk Administrator.", "danger")
-        return redirect(url_for('home'))
-
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     try:

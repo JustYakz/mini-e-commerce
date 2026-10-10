@@ -658,6 +658,74 @@
         </form>
       </section>
 
+      <!-- Seksi Keamanan Akun & Ubah Password -->
+      <section class="section-card">
+        <div class="section-title-bar">
+          <h3 class="section-title">
+            <i data-lucide="shield-check" class="lucide" style="color: var(--primary);"></i>
+            <span>Keamanan Akun & Ubah Password</span>
+          </h3>
+        </div>
+
+        <form action="/ubah-password" method="POST">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+            <div class="form-group">
+              <label class="form-label" for="password_lama">Password Saat Ini</label>
+              <div class="input-with-icon">
+                <i data-lucide="lock" class="input-icon"></i>
+                <input
+                  type="password"
+                  id="password_lama"
+                  name="password_lama"
+                  class="form-control"
+                  placeholder="Masukkan password lama"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="password_baru">Password Baru</label>
+              <div class="input-with-icon">
+                <i data-lucide="key" class="input-icon"></i>
+                <input
+                  type="password"
+                  id="password_baru"
+                  name="password_baru"
+                  class="form-control"
+                  placeholder="Minimal 4 karakter"
+                  minlength="4"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="konfirmasi_password">Konfirmasi Password Baru</label>
+              <div class="input-with-icon">
+                <i data-lucide="check" class="input-icon"></i>
+                <input
+                  type="password"
+                  id="konfirmasi_password"
+                  name="konfirmasi_password"
+                  class="form-control"
+                  placeholder="Ulangi password baru"
+                  minlength="4"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 18px; display: flex; justify-content: flex-end;">
+            <button type="submit" class="btn btn-primary" style="padding: 10px 22px;">
+              <i data-lucide="lock" class="lucide-sm"></i>
+              <span>Perbarui Password</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
       <!-- Sesi Log Out di Bagian Bawah Halaman Profil -->
       <section class="logout-card">
         <div>

@@ -284,11 +284,20 @@
           </div>
 
           <!-- Tombol Aksi Customer Sesuai Status -->
-          <div style="display: flex; gap: 10px;">
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <a
+              href="/invoice/{{ pesanan.id }}"
+              target="_blank"
+              class="btn btn-secondary btn-sm"
+              title="Cetak & Unduh Invoice PDF"
+            >
+              <i data-lucide="printer" class="lucide-sm"></i>
+              <span>Cetak Invoice</span>
+            </a>
             {% if pesanan.status == 'menunggu_pembayaran' %}
               <a
                 href="/bayar-pesanan/{{ pesanan.id }}"
-                class="btn btn-emerald"
+                class="btn btn-emerald btn-sm"
                 onclick="return confirm('Apakah Anda telah menyelesaikan pembayaran untuk pesanan ini?');"
               >
                 <i data-lucide="credit-card" class="lucide-sm"></i>
@@ -297,7 +306,7 @@
             {% elif pesanan.status == 'dikirim' %}
               <a
                 href="/terima-pesanan/{{ pesanan.id }}"
-                class="btn btn-emerald"
+                class="btn btn-emerald btn-sm"
                 onclick="return confirm('Apakah paket pesanan telah sampai dan Anda terima dengan baik?');"
               >
                 <i data-lucide="check-check" class="lucide-sm"></i>
@@ -464,6 +473,11 @@
                   <div style="font-size: 13.5px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     {{ item.nama_produk }}
                   </div>
+                  {% if item.varian %}
+                    <div style="font-size: 11.5px; color: var(--primary); font-weight: 600;">
+                      Varian: {{ item.varian }}
+                    </div>
+                  {% endif %}
                   <div style="font-size: 12px; color: var(--text-muted);">
                     {{ item.jumlah }} item x {{ item.harga_satuan | rupiah }}
                   </div>

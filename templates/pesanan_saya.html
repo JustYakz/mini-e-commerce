@@ -393,14 +393,21 @@
                 {% for item in p.rincian %}
                   <tr>
                     <td>
-                      <div style="display: flex; align-items: center;">
+                      <div style="display: flex; align-items: center; gap: 10px;">
                         <img
                           src="/static/uploads/{{ item.gambar or 'default.jpg' }}"
                           class="img-thumb"
                           alt="{{ item.nama_produk }}"
                           onerror="this.onerror=null; this.src='/static/uploads/default.jpg';"
                         />
-                        <strong style="color: var(--text-main);">{{ item.nama_produk }}</strong>
+                        <div>
+                          <strong style="color: var(--text-main);">{{ item.nama_produk }}</strong>
+                          {% if item.varian %}
+                            <div style="font-size: 11.5px; color: var(--primary); font-weight: 600; margin-top: 2px;">
+                              Varian: {{ item.varian }}
+                            </div>
+                          {% endif %}
+                        </div>
                       </div>
                     </td>
                     <td style="color: var(--text-muted); font-size: 13.5px;">{{ item.jumlah }} &times; {{ item.harga_satuan | rupiah }}</td>
@@ -416,11 +423,20 @@
                   {{ p.alamat_pengiriman or 'Alamat profil pelanggan' }}
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 14px;">
-                  <div style="text-align: right;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="text-align: right; margin-right: 4px;">
                     <div style="font-size: 12px; color: var(--text-muted);">Total Tagihan:</div>
                     <div style="font-size: 18px; font-weight: 800; color: var(--accent-emerald);">{{ p.total_harga | rupiah }}</div>
                   </div>
+                  <a
+                    href="/invoice/{{ p.id }}"
+                    target="_blank"
+                    class="btn btn-secondary btn-sm"
+                    title="Buka & Cetak Invoice Resmi / Unduh PDF"
+                  >
+                    <i data-lucide="printer" class="lucide-sm"></i>
+                    <span>Invoice</span>
+                  </a>
                   <button
                     type="button"
                     class="btn btn-emerald btn-sm"

@@ -283,14 +283,21 @@
                 {% for item in p.rincian %}
                   <tr>
                     <td>
-                      <div style="display: flex; align-items: center;">
+                      <div style="display: flex; align-items: center; gap: 10px;">
                         <img
                           src="/static/uploads/{{ item.gambar or 'default.jpg' }}"
                           class="img-thumb"
                           alt="{{ item.nama_produk }}"
                           onerror="this.onerror=null; this.src='/static/uploads/default.jpg';"
                         />
-                        <span style="font-weight: 600; color: var(--text-main);">{{ item.nama_produk }}</span>
+                        <div>
+                          <span style="font-weight: 600; color: var(--text-main);">{{ item.nama_produk }}</span>
+                          {% if item.varian %}
+                            <div style="font-size: 11px; color: var(--primary); font-weight: 600;">
+                              Varian: {{ item.varian }}
+                            </div>
+                          {% endif %}
+                        </div>
                       </div>
                     </td>
                     <td style="color: var(--text-muted); font-size: 13px;">{{ item.jumlah }} x {{ item.harga_satuan | rupiah }}</td>
@@ -367,7 +374,16 @@
 
               <!-- Footer Pesanan -->
               <div class="order-footer">
-                <div>
+                <div style="display: flex; gap: 8px;">
+                  <a
+                    href="/invoice/{{ p.id }}"
+                    target="_blank"
+                    class="btn btn-secondary btn-sm"
+                    title="Cetak & Unduh Invoice PDF"
+                  >
+                    <i data-lucide="printer" class="lucide-sm"></i>
+                    <span>Invoice</span>
+                  </a>
                   <a
                     href="/hapus-pesanan/{{ p.id }}"
                     class="btn btn-danger-outline btn-sm"

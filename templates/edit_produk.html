@@ -162,6 +162,20 @@
             >{{ produk.deskripsi or '' }}</textarea>
           </div>
 
+          <div class="form-group">
+            <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Varian Produk (Opsional)</span>
+              <small style="color: var(--text-muted); font-size: 11.5px;">Pisahkan dengan tanda koma (,)</small>
+            </label>
+            <input
+              type="text"
+              name="varian"
+              value="{{ produk.varian or '' }}"
+              placeholder="Contoh: Merah, Biru, Hijau atau S, M, L, XL atau 128GB, 256GB"
+              class="form-control"
+            />
+          </div>
+
           <!-- Galeri Foto Saat Ini & Hapus Foto Individual -->
           <div class="form-group">
             <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">

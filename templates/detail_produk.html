@@ -4,6 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ produk.nama_produk }} - Barokah E-Commerce</title>
+    <!-- Open Graph Meta Tags for Social Preview & WhatsApp Sharing -->
+    <meta property="og:type" content="product" />
+    <meta property="og:site_name" content="Barokah E-Commerce" />
+    <meta property="og:title" content="{{ produk.nama_produk }} - Barokah E-Commerce" />
+    <meta property="og:description" content="Beli {{ produk.nama_produk }} dengan harga {{ produk.harga | rupiah }}. Belanja mudah, cepat, dan aman di Barokah E-Commerce." />
+    <meta property="og:image" content="{{ request.url_root }}static/uploads/{{ produk.gambar or 'default.jpg' }}" />
+    <meta property="og:url" content="{{ request.url }}" />
+    <meta property="product:price:amount" content="{{ produk.harga }}" />
+    <meta property="product:price:currency" content="IDR" />
+
     <!-- Dark Mode Init Script -->
     <script>(function(){if(localStorage.getItem('theme')==='dark'||(!localStorage.getItem('theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.setAttribute('data-theme','dark');})();</script>
     <!-- Google Fonts: Plus Jakarta Sans -->
@@ -19,6 +29,46 @@
     <link rel="stylesheet" href="/static/css/style.css" />
 
     <style>
+      .variant-chip {
+        padding: 7px 14px;
+        border-radius: var(--radius-md);
+        border: 1.5px solid var(--border-color);
+        background: var(--bg-surface);
+        color: var(--text-main);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .variant-chip:hover {
+        border-color: var(--primary);
+        background: var(--primary-light);
+      }
+      .variant-chip.active {
+        border-color: var(--primary);
+        background: var(--primary);
+        color: #ffffff;
+      }
+      .btn-wa-share {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: #ecfdf5;
+        color: #059669;
+        border: 1.5px solid #10b981;
+        border-radius: var(--radius-lg);
+        padding: 10px 16px;
+        font-weight: 600;
+        font-size: 13.5px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        margin-top: 14px;
+      }
+      .btn-wa-share:hover {
+        background: #059669;
+        color: #ffffff;
+      }
       .detail-navbar {
         background: var(--bg-surface);
         border-bottom: 1px solid var(--border-color);
@@ -350,31 +400,76 @@
             {{ produk.deskripsi or 'Belum ada deskripsi lengkap untuk produk ini.' }}
           </div>
 
-          <!-- Tombol CTA Beli / Keranjang -->
-          <div class="action-buttons">
-            {% if produk.stok > 0 %}
-              <a
-                href="/tambah-keranjang/{{ produk.id }}"
-                class="btn btn-secondary"
-                style="flex: 1; padding: 13px; font-size: 14.5px; justify-content: center;"
-              >
-                <i data-lucide="shopping-cart" class="lucide-sm"></i>
-                <span>+ Keranjang</span>
-              </a>
-              <a
-                href="/beli-sekarang/{{ produk.id }}"
-                class="btn btn-emerald"
-                style="flex: 1; padding: 13px; font-size: 14.5px; justify-content: center;"
-              >
-                <i data-lucide="zap" class="lucide-sm"></i>
-                <span>Beli Sekarang</span>
-              </a>
-            {% else %}
-              <button disabled class="btn btn-secondary" style="width: 100%; opacity: 0.6; cursor: not-allowed; justify-content: center;">
-                <i data-lucide="slash" class="lucide-sm"></i>
-                <span>Stok Produk Sedang Habis</span>
-              </button>
-            {% endif %}
+          <!-- Pilihan Varian Produk (Jika Ada) -->
+          {% if produk.varian %}
+            {% set varian_list = produk.varian.split(',') %}
+            <div style="margin-bottom: 22px; padding: 14px 16px; background: var(--bg-subtle); border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+              <div style="font-size: 13.5px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <span>Pilih Varian Produk:</span>
+                <span id="selectedVariantBadge" class="badge badge-primary" style="font-size: 11.5px;">{{ varian_list[0].strip() }}</span>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="variantChipsContainer">
+                {% for v in varian_list %}
+                  {% set v_clean = v.strip() %}
+                  <button
+                    type="button"
+                    class="variant-chip {% if loop.first %}active{% endif %}"
+                    onclick="selectVariant('{{ v_clean }}', this)"
+                  >
+                    {{ v_clean }}
+                  </button>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+
+          <!-- Tombol CTA Beli / Keranjang & Bagikan ke WhatsApp -->
+          <div>
+            <div class="action-buttons">
+              {% if produk.stok > 0 %}
+                <form action="/tambah-keranjang/{{ produk.id }}" method="POST" style="flex: 1; display: flex;">
+                  <input type="hidden" name="varian" class="input-selected-varian" value="{{ (produk.varian.split(',')[0].strip()) if produk.varian else '' }}" />
+                  <button
+                    type="submit"
+                    class="btn btn-secondary"
+                    style="width: 100%; padding: 13px; font-size: 14.5px; justify-content: center;"
+                  >
+                    <i data-lucide="shopping-cart" class="lucide-sm"></i>
+                    <span>+ Keranjang</span>
+                  </button>
+                </form>
+
+                <form action="/beli-sekarang/{{ produk.id }}" method="POST" style="flex: 1; display: flex;">
+                  <input type="hidden" name="varian" class="input-selected-varian" value="{{ (produk.varian.split(',')[0].strip()) if produk.varian else '' }}" />
+                  <button
+                    type="submit"
+                    class="btn btn-emerald"
+                    style="width: 100%; padding: 13px; font-size: 14.5px; justify-content: center;"
+                  >
+                    <i data-lucide="zap" class="lucide-sm"></i>
+                    <span>Beli Sekarang</span>
+                  </button>
+                </form>
+              {% else %}
+                <div style="width: 100%;">
+                  <button disabled class="btn btn-secondary" style="width: 100%; opacity: 0.65; cursor: not-allowed; justify-content: center; background: #fee2e2; color: #991b1b; border-color: #fca5a5;">
+                    <i data-lucide="slash" class="lucide-sm"></i>
+                    <span>Stok Produk Sedang Habis</span>
+                  </button>
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Tombol Bagikan ke WhatsApp (Open Graph Preview) -->
+            <a
+              href="https://api.whatsapp.com/send?text={{ (produk.nama_produk ~ ' - Harga: ' ~ (produk.harga | rupiah) ~ '%0ALink Produk: ' ~ request.url) }}"
+              target="_blank"
+              class="btn-wa-share"
+              title="Bagikan produk ini ke teman atau grup WhatsApp"
+            >
+              <i data-lucide="share-2" class="lucide-sm"></i>
+              <span>Bagikan ke WhatsApp</span>
+            </a>
           </div>
         </div>
       </section>
@@ -530,6 +625,16 @@
             icon.style.fill = 'transparent';
             icon.style.color = '#cbd5e1';
           }
+        });
+      }
+
+      function selectVariant(val, btnEl) {
+        document.querySelectorAll('#variantChipsContainer .variant-chip').forEach(c => c.classList.remove('active'));
+        if (btnEl) btnEl.classList.add('active');
+        const badge = document.getElementById('selectedVariantBadge');
+        if (badge) badge.textContent = val;
+        document.querySelectorAll('.input-selected-varian').forEach(input => {
+          input.value = val;
         });
       }
 
