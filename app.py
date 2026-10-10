@@ -859,13 +859,16 @@ def checkout():
 
         # Kosongkan keranjang belanja di session
         session.pop('keranjang', None)
+        nama_produk_ringkasan = ", ".join([it['nama_produk'] for it in items_checkout])
         return render_template(
             'checkout_sukses.html',
             pesanan_id=pesanan_id,
             total=total_harga,
             status=status_awal,
             metode_pembayaran=metode_pembayaran,
-            alamat_pengiriman=alamat_pengiriman
+            alamat_pengiriman=alamat_pengiriman,
+            nama_produk_ringkasan=nama_produk_ringkasan,
+            items=items_checkout
         )
 
     except Exception as e:

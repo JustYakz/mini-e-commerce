@@ -422,6 +422,7 @@
             </div>
 
             {% if pesanan.metode_pembayaran != 'COD' and pesanan.status != 'selesai' and pesanan.status != 'dibatalkan' %}
+              {% set produk_summary = pesanan.rincian | map(attribute='nama_produk') | join(', ') %}
               <div style="margin-top: 14px; padding: 12px 14px; border-radius: var(--radius-md); background: #ecfdf5; border: 1px solid #a7f3d0;">
                 <div style="font-weight: 700; color: #065f46; font-size: 13px; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
                   <i data-lucide="message-circle" class="lucide-sm" style="color: #059669;"></i>
@@ -431,7 +432,7 @@
                   Sudah transfer atau bayar via E-Wallet/QRIS? Kirim bukti bayar langsung ke WhatsApp CS untuk mempercepat proses pesanan.
                 </p>
                 <a
-                  href="https://wa.me/6283152520566?text=Halo%20Admin%20Barokah%20E-Commerce,%20saya%20sudah%20melakukan%20pembayaran%20untuk%20Pesanan%20%23{{ pesanan.id }}%20atas%20nama%20{{ pesanan.nama_pembeli }}%20sebesar%20{{ pesanan.total_harga | rupiah }}.%20Berikut%20bukti%20transfernya."
+                  href="https://wa.me/6283152520566?text=Halo%20Admin%20Barokah%20E-Commerce,%20saya%20sudah%20melakukan%20pembayaran.%0A%0A*Ringkasan%20Pesanan:*%0A-%20ID%20Pesanan:%20%23{{ pesanan.id }}%0A-%20Nama%20Produk:%20{{ (produk_summary or '') | urlencode }}%0A-%20Total%20Harga:%20{{ pesanan.total_harga | rupiah | urlencode }}%0A-%20Metode%20Pembayaran:%20{{ (pesanan.metode_pembayaran or '') | urlencode }}%0A%0ABerikut%20saya%20lampirkan%20bukti%20pembayarannya."
                   target="_blank"
                   class="btn btn-emerald btn-sm"
                   style="width: 100%; justify-content: center; text-decoration: none;"

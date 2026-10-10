@@ -520,6 +520,17 @@
                   <i data-lucide="trash-2" class="lucide-sm"></i>
                   <span>Hapus Foto Profil</span>
                 </a>
+              {% else %}
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  style="padding: 4px 10px; font-size: 12px; opacity: 0.55; cursor: not-allowed;"
+                  disabled
+                  title="Foto profil sudah menggunakan avatar default"
+                >
+                  <i data-lucide="trash-2" class="lucide-sm"></i>
+                  <span>Hapus Foto Profil</span>
+                </button>
               {% endif %}
             </div>
             <div style="display: flex; align-items: center; gap: 16px; margin-top: 8px;">

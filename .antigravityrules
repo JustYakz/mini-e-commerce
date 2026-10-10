@@ -1,0 +1,49 @@
+# Project Rules: Barokah E-Commerce (Flask)
+
+## 1. Tech Stack & Arsitektur Project
+- **Backend Framework:** Python Flask (`app.py`)
+- **Frontend Templating:** HTML dengan Jinja2 (`templates/`)
+- **Aset Statis & Styling:** CSS & JavaScript (`static/`)
+- **Database Management:** MySQL / MariaDB (`db_miniecommerce.sql` / `schema.sql`)
+- **Execution Script:** Batch Script (`run.bat`)
+
+---
+
+## 2. Prinsip Pemrograman & Refactoring Kode
+- **Safe Refactoring:** Dilarang mengedit atau menghapus route (`@app.route`) yang sudah ada tanpa alasan logis. Pertahankan struktur fungsi yang sudah berjalan di `app.py`.
+- **Database Updates:** Jika ada penambahan atribut (foto profil, lokasi, multi-foto produk), perbarui skema database melalui script migrasi atau query SQL secara aman.
+- **Upload Handling:**
+  - Simpan semua berkas gambar (foto profil dan galeri produk) ke folder `static/uploads/`.
+  - Gunakan penamaan acak/timestamp (seperti `uuid` atau `timestamp_filename`) untuk mencegah bentrok nama file.
+  - Sediakan fallback/avatar default apabila foto profil atau produk kosong (`default_avatar.svg` / `default.jpg`).
+- **Error Handling:** Bungkus query database dan proses upload dengan `try-except` serta kirimkan pesan umpan balik melalui `flash()` di Flask.
+
+---
+
+## 3. Standar Desain UI/UX & Design System
+- **Identitas Brand:**
+  - Nama Brand: **Barokah E-Commerce** (Gantikan teks "mini e commerce" di navbar).
+  - Logo: Gunakan file logo di `static/images/logo.png`.
+  - Role Label: Sembunyikan/hapus badge "Role Member Pembeli" dari UI halaman profil dan navbar pelanggan. Tampilkan badge hanya untuk Admin.
+- **Skema Warna:**
+  - **Primary Accent:** Biru Muda (`#3B82F6` / `#00A3FF`)
+  - **Navbar / Dark Accent:** Navy / Biru Tua (`#1E293B` / `#0F172A`)
+  - **Rating Stars:** Amber / Gold (`#F59E0B`)
+- **Dark Mode:** Gunakan CSS Variables (`var(--bg-primary)`, `var(--text-primary)`, `[data-theme="dark"]`) dan simpan preferensi di `localStorage`.
+- **Mobile Responsiveness:** Pastikan grid produk (2 kolom di smartphone), navbar (hamburger menu & drawer), form alamat, dan tombol checkout responsif di layar smartphone.
+
+---
+
+## 4. Spesifikasi Fitur E-Commerce
+- **Navigasi Produk:** Klik kartu produk langsung mengarahkan ke halaman detail produk penuh (`/produk/<id>`) tanpa modal preview / pop-up.
+- **Fitur "Beli Sekarang" (Buy Now):** Tombol "Beli Sekarang" di halaman produk langsung memasukkan item ke sesi transaksi dan mengarahkan pengguna secara otomatis ke halaman Checkout (`/beli-sekarang/<id>` -> `/checkout`) tanpa melewati alur keranjang belanja biasa.
+- **Multi-Foto Produk (Galeri Tambah & Edit):**
+  - Form tambah dan edit produk wajib mendukung unggah banyak foto sekaligus (`multiple`).
+  - Sediakan pratinjau thumbnail live serta fitur hapus foto individual dari galeri produk (`produk_gambar`).
+  - Halaman detail produk menampilkan carousel/strip thumbnail interaktif untuk mengganti foto utama.
+- **Logika Rating Default:** Produk yang belum memiliki ulasan dari pembeli wajib menampilkan rating `0` (atau label "0 / Belum ada rating") secara rapi.
+- **Lokasi & Map Picker (Leaflet.js):** Form alamat pengiriman pelanggan dilengkapi pemilih titik koordinat peta (pin map) interaktif agar lokasi pengiriman akurat.
+- **Konfirmasi Pembayaran WhatsApp (Non-COD):**
+  - Untuk metode pembayaran selain COD (Transfer Bank, E-Wallet, QRIS), sertakan kartu & tombol konfirmasi bukti bayar langsung via WhatsApp ke nomor `6283152520566` dengan pesan template otomatis (memuat ID pesanan, nama pembeli, dan total harga).
+- **Hapus Foto Profil:** Halaman profil menyediakan opsi untuk menghapus foto profil yang diunggah dan mengembalikan tampilan ke avatar default.
+

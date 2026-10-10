@@ -780,13 +780,14 @@
             </ol>
           </div>
 
+          {% set item_names_summary = items | map(attribute='nama_produk') | join(', ') %}
           <div style="margin-top: 14px; padding: 12px 14px; background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <i data-lucide="message-circle" class="lucide-sm" style="color: #059669;"></i>
               <span style="font-size: 12.5px; color: #065f46; font-weight: 600;">Konfirmasi Pembayaran Transfer Bank:</span>
             </div>
             <a
-              href="https://wa.me/6283152520566?text=Halo%20Admin%20Barokah%20E-Commerce%2C%20saya%20ingin%20konfirmasi%20pembayaran%20pesanan%20sebesar%20Rp%20{{ total | int }}%20via%20Transfer%20Bank.%20Nama%3A%20{{ user.nama }}."
+              href="https://wa.me/6283152520566?text=Halo%20Admin%20Barokah%20E-Commerce,%20saya%20ingin%20konfirmasi%20pembayaran%20pesanan.%0A%0A*Ringkasan%20Pesanan:*%0A-%20Nama%20Produk:%20{{ item_names_summary | urlencode }}%0A-%20Total%20Harga:%20{{ total | rupiah | urlencode }}%0A-%20Metode%20Pembayaran:%20Transfer%20Bank%0A-%20Nama%20Pembeli:%20{{ user.nama | urlencode }}."
               target="_blank"
               class="btn btn-emerald btn-sm"
               style="padding: 6px 12px; font-size: 12px; text-decoration: none;"
@@ -837,7 +838,7 @@
               <span style="font-size: 12.5px; color: #065f46; font-weight: 600;">Konfirmasi Pembayaran E-Wallet:</span>
             </div>
             <a
-              href="https://wa.me/6283152520566?text=Halo%20Admin%20Barokah%20E-Commerce%2C%20saya%20ingin%20konfirmasi%20pembayaran%20pesanan%20sebesar%20Rp%20{{ total | int }}%20via%20E-Wallet.%20Nama%3A%20{{ user.nama }}."
+              href="https://wa.me/6283152520566?text=Halo%20Admin%20Barokah%20E-Commerce,%20saya%20ingin%20konfirmasi%20pembayaran%20pesanan.%0A%0A*Ringkasan%20Pesanan:*%0A-%20Nama%20Produk:%20{{ item_names_summary | urlencode }}%0A-%20Total%20Harga:%20{{ total | rupiah | urlencode }}%0A-%20Metode%20Pembayaran:%20E-Wallet%0A-%20Nama%20Pembeli:%20{{ user.nama | urlencode }}."
               target="_blank"
               class="btn btn-emerald btn-sm"
               style="padding: 6px 12px; font-size: 12px; text-decoration: none;"
@@ -883,7 +884,7 @@
               <span style="font-size: 12.5px; color: #065f46; font-weight: 600;">Konfirmasi Pembayaran QRIS:</span>
             </div>
             <a
-              href="https://wa.me/6283152520566?text=Halo%20Admin%20Barokah%20E-Commerce%2C%20saya%20ingin%20konfirmasi%20pembayaran%20pesanan%20sebesar%20Rp%20{{ total | int }}%20via%20QRIS.%20Nama%3A%20{{ user.nama }}."
+              href="https://wa.me/6283152520566?text=Halo%20Admin%20Barokah%20E-Commerce,%20saya%20ingin%20konfirmasi%20pembayaran%20pesanan.%0A%0A*Ringkasan%20Pesanan:*%0A-%20Nama%20Produk:%20{{ item_names_summary | urlencode }}%0A-%20Total%20Harga:%20{{ total | rupiah | urlencode }}%0A-%20Metode%20Pembayaran:%20QRIS%0A-%20Nama%20Pembeli:%20{{ user.nama | urlencode }}."
               target="_blank"
               class="btn btn-emerald btn-sm"
               style="padding: 6px 12px; font-size: 12px; text-decoration: none;"

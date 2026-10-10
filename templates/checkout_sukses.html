@@ -154,7 +154,7 @@
               Segera kirim screenshot / bukti transfer Anda ke WhatsApp CS agar pesanan langsung kami proses dan kirimkan.
             </p>
             <a
-              href="https://wa.me/6283152520566?text=Halo%20Admin%20Barokah%20E-Commerce,%20saya%20sudah%20melakukan%20pembayaran%20untuk%20Pesanan%20%23{{ pesanan_id }}%20dengan%20metode%20{{ metode_pembayaran }}%20sebesar%20{{ total | rupiah }}.%20Berikut%20bukti%20transfernya."
+              href="https://wa.me/6283152520566?text=Halo%20Admin%20Barokah%20E-Commerce,%20saya%20sudah%20melakukan%20pembayaran.%0A%0A*Ringkasan%20Pesanan:*%0A-%20ID%20Pesanan:%20%23{{ pesanan_id }}%0A-%20Nama%20Produk:%20{{ (nama_produk_ringkasan or '') | urlencode }}%0A-%20Total%20Harga:%20{{ total | rupiah | urlencode }}%0A-%20Metode%20Pembayaran:%20{{ (metode_pembayaran or '') | urlencode }}%0A%0ABerikut%20saya%20lampirkan%20bukti%20pembayarannya."
               target="_blank"
               class="btn btn-emerald btn-sm"
               style="width: 100%; justify-content: center; text-decoration: none;"
